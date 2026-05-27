@@ -10,6 +10,7 @@ class GlassButton extends StatelessWidget {
     this.onPressed,
     this.selected = false,
     this.tooltip,
+    this.blurred = false,
   });
 
   final IconData icon;
@@ -17,6 +18,7 @@ class GlassButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool selected;
   final String? tooltip;
+  final bool blurred;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class GlassButton extends StatelessWidget {
         borderRadius: 999,
         opacity: enabled ? (selected ? 0.72 : 0.50) : 0.24,
         padding: EdgeInsets.symmetric(horizontal: label == null ? 10 : 8, vertical: 9),
+        blurred: blurred,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,

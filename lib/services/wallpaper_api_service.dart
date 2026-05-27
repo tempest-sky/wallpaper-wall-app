@@ -25,32 +25,33 @@ class WallpaperApiService {
   Future<List<Wallpaper>> fetchWallpapers({
     WallpaperCategory category = WallpaperCategory.all,
     int start = 0,
+    required int seed,
   }) async {
     if (category == WallpaperCategory.all) {
-      return _fetchMixed(start: start);
+      return _fetchMixed(start: start, seed: seed);
     }
 
     final cid = _categoryCid[category] ?? 9;
     return _fetchByCid(
       cid: cid,
       category: category,
-      start: start,
+      start: _random360Start(seed: seed, start: start, cid: cid),
       count: perCategoryCount,
     );
   }
 
-  Future<List<Wallpaper>> _fetchMixed({required int start}) async {
+  Future<List<Wallpaper>> _fetchMixed({required int start, required int seed}) async {
     final futures = <Future<List<Wallpaper>>>[
       ..._mixedCids.map(
         (cid) => _fetchByCid(
           cid: cid,
           category: _categoryFromCid(cid),
-          start: start,
+          start: _random360Start(seed: seed, start: start, cid: cid),
           count: 10,
         ).catchError((_) => <Wallpaper>[]),
       ),
-      _fetchBing(start: start).catchError((_) => <Wallpaper>[]),
-      _fetchPicsum(start: start).catchError((_) => <Wallpaper>[]),
+      _fetchBing(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
+      _fetchPicsum(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
     ];
 
     final batches = await Future.wait(futures);
@@ -61,7 +62,7 @@ class WallpaperApiService {
       }
     }
 
-    final list = unique.values.toList()..shuffle(Random(start + 7));
+    final list = unique.values.toList()..shuffle(Random(seed + start + 7));
     if (list.length <= mixedCount) return list;
     return list.take(mixedCount).toList();
   }
@@ -103,11 +104,11 @@ class WallpaperApiService {
         .toList();
   }
 
-  Future<List<Wallpaper>> _fetchBing({required int start}) async {
+  Future<List<Wallpaper>> _fetchBing({required int start, required int seed}) async {
     final uri = Uri.parse(_bingEndpoint).replace(
       queryParameters: <String, String>{
         'format': 'js',
-        'idx': '${start % 8}',
+        'idx': '${((seed ~/ 17) + start) % 8}',
         'n': '8',
         'mkt': 'zh-CN',
       },
@@ -120,7 +121,7 @@ class WallpaperApiService {
     final images = payload['images'];
     if (images is! List) return <Wallpaper>[];
 
-    return images.whereType<Map<String, dynamic>>().map((item) {
+    final list = images.whereType<Map<String, dynamic>>().map((item) {
       final urlPart = '${item['url'] ?? ''}';
       final url = urlPart.startsWith('http') ? urlPart : 'https://www.bing.com$urlPart';
       final title = '${item['title'] ?? item['copyright'] ?? 'Bing 每日壁纸'}';
@@ -137,10 +138,13 @@ class WallpaperApiService {
         origin: '1920×1080 · Bing 每日壁纸',
       );
     }).toList();
+
+    return list..shuffle(Random(seed + start + 31));
   }
 
-  Future<List<Wallpaper>> _fetchPicsum({required int start}) async {
-    final page = (start ~/ 20) + 1;
+  Future<List<Wallpaper>> _fetchPicsum({required int start, required int seed}) async {
+    final pageOffset = (seed.abs() % 80) + 1;
+    final page = pageOffset + (start ~/ 20);
     final uri = Uri.parse(_picsumEndpoint).replace(
       queryParameters: <String, String>{
         'page': '$page',
@@ -154,13 +158,13 @@ class WallpaperApiService {
     final data = jsonDecode(response.body);
     if (data is! List) return <Wallpaper>[];
 
-    return data.whereType<Map<String, dynamic>>().map((item) {
+    final list = data.whereType<Map<String, dynamic>>().map((item) {
       final id = 'picsum-${item['id'] ?? item.hashCode}';
       final author = '${item['author'] ?? 'Unknown'}';
       final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
       final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
-      final seed = item['id'] ?? id;
-      final imageUrl = 'https://picsum.photos/seed/$seed/1080/1920';
+      final imageSeed = item['id'] ?? '$id-$seed';
+      final imageUrl = 'https://picsum.photos/seed/$imageSeed/1080/1920';
       return Wallpaper(
         id: id,
         name: '随机摄影 · $author',
@@ -173,6 +177,8 @@ class WallpaperApiService {
         origin: '$width×$height · Picsum 随机图',
       );
     }).toList();
+
+    return list..shuffle(Random(seed + start + 53));
   }
 
   Wallpaper _to360Wallpaper(Map<String, dynamic> item, WallpaperCategory fallback) {
@@ -196,6 +202,11 @@ class WallpaperApiService {
       source: WallpaperSource.qh360,
       origin: '${width > 0 ? width : '?'}×${height > 0 ? height : '?'} · 360 壁纸',
     );
+  }
+
+  int _random360Start({required int seed, required int start, required int cid}) {
+    final base = (seed.abs() + cid * 37) % 260;
+    return base + start;
   }
 
   WallpaperCategory _categoryFromCid(int cid) {

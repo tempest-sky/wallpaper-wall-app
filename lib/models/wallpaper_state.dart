@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -24,6 +25,7 @@ class WallpaperState extends ChangeNotifier {
   bool _saving = false;
   String? _error;
   int _page = 0;
+  int _sessionSeed = DateTime.now().millisecondsSinceEpoch;
 
   List<Wallpaper> get wallpapers => List.unmodifiable(_wallpapers);
   List<Wallpaper> get visibleWallpapers {
@@ -73,6 +75,7 @@ class WallpaperState extends ChangeNotifier {
     try {
       if (reset) {
         _page = 0;
+        _sessionSeed = _newSessionSeed();
         _wallpapers.clear();
         _knownUrls.clear();
       }
@@ -80,6 +83,7 @@ class WallpaperState extends ChangeNotifier {
       final next = await _api.fetchWallpapers(
         category: _category,
         start: _page * WallpaperApiService.perCategoryCount,
+        seed: _sessionSeed,
       );
 
       for (final wallpaper in next) {
@@ -131,6 +135,8 @@ class WallpaperState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  int _newSessionSeed() => DateTime.now().microsecondsSinceEpoch ^ Random().nextInt(1 << 31);
 
   Future<bool> _requestSavePermission() async {
     if (Platform.isAndroid) {

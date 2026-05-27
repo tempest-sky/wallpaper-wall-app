@@ -43,25 +43,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleScroll() {
-    final offset = _scrollController.offset;
-    final delta = offset - _lastOffset;
-    _lastOffset = offset;
+    if (!_scrollController.hasClients) return;
 
-    if (_scrollController.hasClients) {
-      final max = _scrollController.position.maxScrollExtent;
-      final state = context.read<WallpaperState>();
-      if (max - offset < 720 && !state.loading && state.wallpapers.isNotEmpty) {
-        state.fetch();
-      }
+    final offset = _scrollController.offset;
+    final state = context.read<WallpaperState>();
+    final max = _scrollController.position.maxScrollExtent;
+    if (max - offset < 720 && !state.loading && state.wallpapers.isNotEmpty) {
+      state.fetch();
     }
 
-    if (offset < 80 && !_headerVisible) {
-      setState(() => _headerVisible = true);
+    if (offset <= 24) {
+      _lastOffset = offset;
+      if (!_headerVisible) setState(() => _headerVisible = true);
       return;
     }
-    if (delta > 8 && _headerVisible) {
+
+    final delta = offset - _lastOffset;
+    _lastOffset = offset;
+    if (offset < 120) return;
+
+    if (delta > 12 && _headerVisible) {
       setState(() => _headerVisible = false);
-    } else if (delta < -8 && !_headerVisible) {
+    } else if (delta < -12 && !_headerVisible) {
       setState(() => _headerVisible = true);
     }
   }
@@ -282,19 +285,21 @@ class _FloatingHeader extends StatelessWidget {
                         ],
                       ),
                     ),
-                    GlassButton(icon: Icons.vertical_align_top_rounded, tooltip: '回到顶部', onPressed: onTop),
+                    GlassButton(icon: Icons.vertical_align_top_rounded, tooltip: '回到顶部', onPressed: onTop, blurred: true),
                     const SizedBox(width: 6),
-                    GlassButton(icon: Icons.play_arrow_rounded, tooltip: '播放幻灯片', onPressed: canPlay ? onPlay : null, selected: true),
+                    GlassButton(icon: Icons.play_arrow_rounded, tooltip: '播放幻灯片', onPressed: canPlay ? onPlay : null, selected: true, blurred: true),
                     const SizedBox(width: 6),
                     GlassButton(
                       icon: settings.themeIcon,
                       tooltip: settings.themeLabel,
+                      blurred: true,
                       onPressed: settings.toggleTheme,
                     ),
                     const SizedBox(width: 6),
                     GlassButton(
                       icon: loading ? Icons.hourglass_top_rounded : Icons.refresh_rounded,
                       tooltip: '刷新',
+                      blurred: true,
                       onPressed: loading ? null : onRefresh,
                     ),
                   ],
@@ -329,6 +334,7 @@ class _SelectedSheet extends StatelessWidget {
     return GlassPanel(
       borderRadius: 24,
       opacity: 0.62,
+      blurred: true,
       padding: const EdgeInsets.all(8),
       child: Row(
         children: <Widget>[

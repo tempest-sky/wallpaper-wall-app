@@ -90,8 +90,11 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                 switchInCurve: Curves.easeOutCubic,
                 child: ImageFiltered(
                   key: ValueKey('bg-${wallpaper.id}'),
-                  imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                  child: CachedNetworkImage(imageUrl: wallpaper.url, fit: BoxFit.cover),
+                  imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                  child: Transform.scale(
+                    scale: 1.12,
+                    child: CachedNetworkImage(imageUrl: wallpaper.url, fit: BoxFit.cover),
+                  ),
                 ),
               ),
             ),
@@ -145,12 +148,13 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                 padding: const EdgeInsets.all(14),
                 child: Row(
                   children: <Widget>[
-                    GlassButton(icon: Icons.close_rounded, tooltip: '关闭', onPressed: widget.onClose),
+                    GlassButton(icon: Icons.close_rounded, tooltip: '关闭', blurred: true, onPressed: widget.onClose),
                     const SizedBox(width: 10),
                     Expanded(
                       child: GlassPanel(
                         borderRadius: 999,
                         opacity: 0.34,
+                        blurred: true,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                         child: Text(
                           '${_index + 1}/${widget.wallpapers.length} · ${wallpaper.name}',
@@ -172,21 +176,23 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                 child: GlassPanel(
                   borderRadius: 30,
                   opacity: 0.38,
+                  blurred: true,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: <Widget>[
-                      Expanded(child: GlassButton(icon: Icons.skip_previous_rounded, label: '上一张', onPressed: _previous)),
+                      Expanded(child: GlassButton(icon: Icons.skip_previous_rounded, label: '上一张', blurred: true, onPressed: _previous)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: GlassButton(
                           icon: _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                           label: _playing ? '暂停' : '播放',
                           selected: true,
+                          blurred: true,
                           onPressed: _togglePlay,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', onPressed: _next)),
+                      Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
                     ],
                   ),
                 ),
