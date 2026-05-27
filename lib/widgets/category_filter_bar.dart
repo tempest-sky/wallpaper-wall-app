@@ -15,9 +15,9 @@ class CategoryFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 58,
+      height: 50,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         scrollDirection: Axis.horizontal,
         itemCount: WallpaperCategory.values.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -27,6 +27,8 @@ class CategoryFilterBar extends StatelessWidget {
           return FilterChip(
             selected: active,
             showCheckmark: false,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
             label: Text(category.label),
             avatar: Icon(
               _iconFor(category),

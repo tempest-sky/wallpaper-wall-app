@@ -6,9 +6,12 @@ import 'package:http/http.dart' as http;
 import '../models/wallpaper.dart';
 
 class WallpaperApiService {
-  static const String _endpoint = 'http://wallpaper.apc.360.cn/index.php';
+  static const String _endpoint360 = 'http://wallpaper.apc.360.cn/index.php';
+  static const String _bingEndpoint = 'https://www.bing.com/HPImageArchive.aspx';
+  static const String _picsumEndpoint = 'https://picsum.photos/v2/list';
+
   static const int perCategoryCount = 30;
-  static const int mixedCount = 60;
+  static const int mixedCount = 84;
 
   static const Map<WallpaperCategory, int> _categoryCid = {
     WallpaperCategory.general: 9,
@@ -37,14 +40,18 @@ class WallpaperApiService {
   }
 
   Future<List<Wallpaper>> _fetchMixed({required int start}) async {
-    final futures = _mixedCids.map(
-      (cid) => _fetchByCid(
-        cid: cid,
-        category: _categoryFromCid(cid),
-        start: start,
-        count: 12,
+    final futures = <Future<List<Wallpaper>>>[
+      ..._mixedCids.map(
+        (cid) => _fetchByCid(
+          cid: cid,
+          category: _categoryFromCid(cid),
+          start: start,
+          count: 10,
+        ).catchError((_) => <Wallpaper>[]),
       ),
-    );
+      _fetchBing(start: start).catchError((_) => <Wallpaper>[]),
+      _fetchPicsum(start: start).catchError((_) => <Wallpaper>[]),
+    ];
 
     final batches = await Future.wait(futures);
     final unique = <String, Wallpaper>{};
@@ -54,7 +61,7 @@ class WallpaperApiService {
       }
     }
 
-    final list = unique.values.toList()..shuffle(Random());
+    final list = unique.values.toList()..shuffle(Random(start + 7));
     if (list.length <= mixedCount) return list;
     return list.take(mixedCount).toList();
   }
@@ -65,7 +72,7 @@ class WallpaperApiService {
     required int start,
     required int count,
   }) async {
-    final uri = Uri.parse(_endpoint).replace(
+    final uri = Uri.parse(_endpoint360).replace(
       queryParameters: <String, String>{
         'c': 'WallPaper',
         'a': 'getAppsByCategory',
@@ -91,12 +98,82 @@ class WallpaperApiService {
 
     return data
         .whereType<Map<String, dynamic>>()
-        .map((item) => _toWallpaper(item, category))
+        .map((item) => _to360Wallpaper(item, category))
         .where((wallpaper) => wallpaper.url.isNotEmpty)
         .toList();
   }
 
-  Wallpaper _toWallpaper(Map<String, dynamic> item, WallpaperCategory fallback) {
+  Future<List<Wallpaper>> _fetchBing({required int start}) async {
+    final uri = Uri.parse(_bingEndpoint).replace(
+      queryParameters: <String, String>{
+        'format': 'js',
+        'idx': '${start % 8}',
+        'n': '8',
+        'mkt': 'zh-CN',
+      },
+    );
+
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return <Wallpaper>[];
+
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    final images = payload['images'];
+    if (images is! List) return <Wallpaper>[];
+
+    return images.whereType<Map<String, dynamic>>().map((item) {
+      final urlPart = '${item['url'] ?? ''}';
+      final url = urlPart.startsWith('http') ? urlPart : 'https://www.bing.com$urlPart';
+      final title = '${item['title'] ?? item['copyright'] ?? 'Bing 每日壁纸'}';
+      final id = 'bing-${item['startdate'] ?? url.hashCode}';
+      return Wallpaper(
+        id: id,
+        name: title.isBlank ? 'Bing 每日壁纸' : title,
+        url: url,
+        downloadUrl: url,
+        width: 1920,
+        height: 1080,
+        category: WallpaperCategory.general,
+        origin: '1920×1080 · Bing 每日壁纸',
+      );
+    }).toList();
+  }
+
+  Future<List<Wallpaper>> _fetchPicsum({required int start}) async {
+    final page = (start ~/ 20) + 1;
+    final uri = Uri.parse(_picsumEndpoint).replace(
+      queryParameters: <String, String>{
+        'page': '$page',
+        'limit': '20',
+      },
+    );
+
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return <Wallpaper>[];
+
+    final data = jsonDecode(response.body);
+    if (data is! List) return <Wallpaper>[];
+
+    return data.whereType<Map<String, dynamic>>().map((item) {
+      final id = 'picsum-${item['id'] ?? item.hashCode}';
+      final author = '${item['author'] ?? 'Unknown'}';
+      final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
+      final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
+      final seed = item['id'] ?? id;
+      final imageUrl = 'https://picsum.photos/seed/$seed/1080/1920';
+      return Wallpaper(
+        id: id,
+        name: '随机摄影 · $author',
+        url: imageUrl,
+        downloadUrl: imageUrl,
+        width: width,
+        height: height,
+        category: WallpaperCategory.random,
+        origin: '$width×$height · Picsum 随机图',
+      );
+    }).toList();
+  }
+
+  Wallpaper _to360Wallpaper(Map<String, dynamic> item, WallpaperCategory fallback) {
     final id = '${item['id'] ?? item['utag'] ?? item['url'] ?? DateTime.now().microsecondsSinceEpoch}';
     final name = '${item['utag'] ?? item['title'] ?? '360 壁纸'}';
     final rawUrl = '${item['url'] ?? item['img_1600_900'] ?? item['img_1024_768'] ?? ''}';

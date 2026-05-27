@@ -10,18 +10,16 @@ class WallpaperGrid extends StatelessWidget {
     required this.wallpapers,
     required this.selected,
     required this.onSelect,
-    required this.onPlay,
+    required this.onOpenOriginal,
     required this.onSave,
-    required this.onLoadMore,
     required this.loading,
   });
 
   final List<Wallpaper> wallpapers;
   final Wallpaper? selected;
   final ValueChanged<Wallpaper> onSelect;
-  final ValueChanged<Wallpaper> onPlay;
+  final ValueChanged<Wallpaper> onOpenOriginal;
   final ValueChanged<Wallpaper> onSave;
-  final VoidCallback onLoadMore;
   final bool loading;
 
   @override
@@ -38,15 +36,11 @@ class WallpaperGrid extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.wallpaper_rounded, size: 52),
-              const SizedBox(height: 12),
+              const Icon(Icons.wallpaper_rounded, size: 48),
+              const SizedBox(height: 10),
               Text('暂无壁纸', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: onLoadMore,
-                icon: const Icon(Icons.cloud_download_rounded),
-                label: const Text('抓取壁纸'),
-              ),
+              const SizedBox(height: 4),
+              Text('下拉刷新或切换分类', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -54,27 +48,32 @@ class WallpaperGrid extends StatelessWidget {
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 102),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.crossAxisExtent;
-          final crossAxisCount = width >= 920 ? 3 : 2;
+          final crossAxisCount = width >= 980 ? 3 : 2;
+          final gap = width < 390 ? 10.0 : 14.0;
           return SliverMasonryGrid.count(
             crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
+            mainAxisSpacing: gap,
+            crossAxisSpacing: gap,
             childCount: wallpapers.length + 1,
             itemBuilder: (context, index) {
               if (index == wallpapers.length) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   child: Center(
                     child: loading
-                        ? const CircularProgressIndicator()
-                        : FilledButton.icon(
-                            onPressed: onLoadMore,
-                            icon: const Icon(Icons.add_photo_alternate_rounded),
-                            label: const Text('继续抓取'),
+                        ? const SizedBox.square(
+                            dimension: 26,
+                            child: CircularProgressIndicator(strokeWidth: 2.4),
+                          )
+                        : Text(
+                            '继续下滑自动加载',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                   ),
                 );
@@ -85,7 +84,7 @@ class WallpaperGrid extends StatelessWidget {
                 wallpaper: wallpaper,
                 selected: selected?.id == wallpaper.id,
                 onSelect: () => onSelect(wallpaper),
-                onPlay: () => onPlay(wallpaper),
+                onOpenOriginal: () => onOpenOriginal(wallpaper),
                 onSave: () => onSave(wallpaper),
               );
             },
