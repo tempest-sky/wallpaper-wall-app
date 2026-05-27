@@ -7,7 +7,7 @@ Flutter Android wallpaper wall app with Material 3 style.
 - 顶部全局幻灯片播放入口。
 - 卡片操作：查看原图、保存。
 - 滑到底部自动加载更多壁纸。
-- 混合数据源：360 壁纸、Bing 每日壁纸、Picsum 随机摄影。
+- 混合数据源：360 壁纸、Bing 每日壁纸、Picsum 随机摄影、Pexels 高清图库、远方随机风景、远梦网红壁纸。
 - 360 国内壁纸 API。
 - 分类筛选：全部、综合、二次元、人物、随机。
 - 双列/三列自适应瀑布流。
@@ -30,7 +30,7 @@ Flutter Android wallpaper wall app with Material 3 style.
 ```bash
 flutter pub get
 flutter analyze
-flutter build apk --release
+flutter build apk --release --dart-define=PEXELS_API_KEY=你的_Pexels_API_Key
 ```
 
 APK 输出路径：

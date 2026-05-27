@@ -11,6 +11,9 @@ enum WallpaperSource {
   qh360,
   bing,
   picsum,
+  pexels,
+  yuanfang,
+  yuanmeng,
 }
 
 extension WallpaperCategoryLabel on WallpaperCategory {
@@ -56,6 +59,12 @@ extension WallpaperSourceLabel on WallpaperSource {
         return 'Bing';
       case WallpaperSource.picsum:
         return 'Picsum';
+      case WallpaperSource.pexels:
+        return 'Pexels';
+      case WallpaperSource.yuanfang:
+        return '远方';
+      case WallpaperSource.yuanmeng:
+        return '远梦';
     }
   }
 
@@ -69,6 +78,12 @@ extension WallpaperSourceLabel on WallpaperSource {
         return 'Bing 每日壁纸';
       case WallpaperSource.picsum:
         return 'Picsum 随机摄影';
+      case WallpaperSource.pexels:
+        return 'Pexels 高清图库';
+      case WallpaperSource.yuanfang:
+        return '远方随机风景';
+      case WallpaperSource.yuanmeng:
+        return '远梦网红壁纸';
     }
   }
 }

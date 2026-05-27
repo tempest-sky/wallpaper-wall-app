@@ -9,9 +9,13 @@ class WallpaperApiService {
   static const String _endpoint360 = 'http://wallpaper.apc.360.cn/index.php';
   static const String _bingEndpoint = 'https://www.bing.com/HPImageArchive.aspx';
   static const String _picsumEndpoint = 'https://picsum.photos/v2/list';
+  static const String _pexelsEndpoint = 'https://api.pexels.com/v1/search';
+  static const String _pexelsApiKey = String.fromEnvironment('PEXELS_API_KEY');
+  static const String _yuanfangEndpoint = 'https://tu.ltyuanfang.cn/api/fengjing.php';
+  static const String _yuanmengEndpoint = 'https://api.mmp.cc/api/kswallpaper';
 
   static const int perCategoryCount = 30;
-  static const int mixedCount = 84;
+  static const int mixedCount = 120;
 
   static const Map<WallpaperCategory, int> _categoryCid = {
     WallpaperCategory.general: 9,
@@ -24,9 +28,14 @@ class WallpaperApiService {
 
   Future<List<Wallpaper>> fetchWallpapers({
     WallpaperCategory category = WallpaperCategory.all,
+    WallpaperSource source = WallpaperSource.all,
     int start = 0,
     required int seed,
   }) async {
+    if (source != WallpaperSource.all) {
+      return _fetchBySource(source: source, category: category, start: start, seed: seed);
+    }
+
     if (category == WallpaperCategory.all) {
       return _fetchMixed(start: start, seed: seed);
     }
@@ -38,6 +47,53 @@ class WallpaperApiService {
       start: _random360Start(seed: seed, start: start, cid: cid),
       count: perCategoryCount,
     );
+  }
+
+  Future<List<Wallpaper>> _fetchBySource({
+    required WallpaperSource source,
+    required WallpaperCategory category,
+    required int start,
+    required int seed,
+  }) async {
+    switch (source) {
+      case WallpaperSource.all:
+        return fetchWallpapers(category: category, start: start, seed: seed);
+      case WallpaperSource.qh360:
+        if (category == WallpaperCategory.all) {
+          return _fetchMixed360(start: start, seed: seed);
+        }
+        final cid = _categoryCid[category] ?? 9;
+        return _fetchByCid(
+          cid: cid,
+          category: category,
+          start: _random360Start(seed: seed, start: start, cid: cid),
+          count: perCategoryCount,
+        );
+      case WallpaperSource.bing:
+        return _fetchBing(start: start, seed: seed);
+      case WallpaperSource.picsum:
+        return _fetchPicsum(start: start, seed: seed);
+      case WallpaperSource.pexels:
+        return _fetchPexels(start: start, seed: seed);
+      case WallpaperSource.yuanfang:
+        return _fetchYuanfang(start: start, seed: seed);
+      case WallpaperSource.yuanmeng:
+        return _fetchYuanmeng(start: start, seed: seed);
+    }
+  }
+
+  Future<List<Wallpaper>> _fetchMixed360({required int start, required int seed}) async {
+    final batches = await Future.wait(
+      _mixedCids.map(
+        (cid) => _fetchByCid(
+          cid: cid,
+          category: _categoryFromCid(cid),
+          start: _random360Start(seed: seed, start: start, cid: cid),
+          count: 10,
+        ).catchError((_) => <Wallpaper>[]),
+      ),
+    );
+    return batches.expand((batch) => batch).toList();
   }
 
   Future<List<Wallpaper>> _fetchMixed({required int start, required int seed}) async {
@@ -52,6 +108,9 @@ class WallpaperApiService {
       ),
       _fetchBing(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
       _fetchPicsum(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
+      _fetchPexels(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
+      _fetchYuanfang(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
+      _fetchYuanmeng(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
     ];
 
     final batches = await Future.wait(futures);
@@ -179,6 +238,98 @@ class WallpaperApiService {
     }).toList();
 
     return list..shuffle(Random(seed + start + 53));
+  }
+
+  Future<List<Wallpaper>> _fetchPexels({required int start, required int seed}) async {
+    if (_pexelsApiKey.isBlank) return <Wallpaper>[];
+
+    final queries = <String>['nature wallpaper', 'landscape', 'mountain', 'ocean', 'city night', 'forest'];
+    final query = queries[(seed + start).abs() % queries.length];
+    final page = ((seed.abs() + start) % 40) + 1;
+    final uri = Uri.parse(_pexelsEndpoint).replace(
+      queryParameters: <String, String>{
+        'query': query,
+        'orientation': 'portrait',
+        'per_page': '24',
+        'page': '$page',
+      },
+    );
+
+    final response = await http
+        .get(uri, headers: const <String, String>{'Authorization': _pexelsApiKey})
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return <Wallpaper>[];
+
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    final photos = payload['photos'];
+    if (photos is! List) return <Wallpaper>[];
+
+    final list = photos.whereType<Map<String, dynamic>>().map((item) {
+      final id = 'pexels-${item['id'] ?? item.hashCode}';
+      final src = item['src'];
+      final original = src is Map<String, dynamic> ? '${src['original'] ?? src['large2x'] ?? src['large'] ?? ''}' : '';
+      final display = src is Map<String, dynamic> ? '${src['large2x'] ?? src['large'] ?? original}' : original;
+      final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
+      final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
+      final photographer = '${item['photographer'] ?? 'Pexels'}';
+      return Wallpaper(
+        id: id,
+        name: 'Pexels · $photographer',
+        url: display,
+        downloadUrl: original.isBlank ? display : original,
+        width: width,
+        height: height,
+        category: WallpaperCategory.general,
+        source: WallpaperSource.pexels,
+        origin: '$width×$height · Pexels 高清图库',
+      );
+    }).where((wallpaper) => wallpaper.url.isNotEmpty).toList();
+
+    return list..shuffle(Random(seed + start + 71));
+  }
+
+  Future<List<Wallpaper>> _fetchYuanfang({required int start, required int seed}) async {
+    return List<Wallpaper>.generate(12, (index) {
+      final nonce = seed + start + index;
+      final imageUrl = '$_yuanfangEndpoint?_t=$nonce';
+      return Wallpaper(
+        id: 'yuanfang-$nonce',
+        name: '远方随机风景',
+        url: imageUrl,
+        downloadUrl: imageUrl,
+        width: 2160,
+        height: 3840,
+        category: WallpaperCategory.general,
+        source: WallpaperSource.yuanfang,
+        origin: '4K 风景 · 远方随机 API',
+      );
+    });
+  }
+
+  Future<List<Wallpaper>> _fetchYuanmeng({required int start, required int seed}) async {
+    const categories = <String>['kuaishou', 'taobao', 'meizi', 'cos'];
+    return List<Wallpaper>.generate(16, (index) {
+      final category = categories[(seed + start + index).abs() % categories.length];
+      final nonce = seed + start + index;
+      final imageUrl = Uri.parse(_yuanmengEndpoint).replace(
+        queryParameters: <String, String>{
+          'category': category,
+          'type': 'jpg',
+          '_t': '$nonce',
+        },
+      ).toString();
+      return Wallpaper(
+        id: 'yuanmeng-$category-$nonce',
+        name: '远梦网红壁纸 · $category',
+        url: imageUrl,
+        downloadUrl: imageUrl,
+        width: 1080,
+        height: 1920,
+        category: WallpaperCategory.people,
+        source: WallpaperSource.yuanmeng,
+        origin: '手机竖屏 · 远梦网红壁纸',
+      );
+    });
   }
 
   Wallpaper _to360Wallpaper(Map<String, dynamic> item, WallpaperCategory fallback) {

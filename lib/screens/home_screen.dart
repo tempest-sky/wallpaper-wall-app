@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: <Widget>[
-                    SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).top + 156)),
+                    SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).top + 166)),
                     if (state.error != null)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 240),
                 curve: Curves.easeOutCubic,
-                top: _headerVisible ? 0 : -162,
+                top: _headerVisible ? 0 : -174,
                 left: 0,
                 right: 0,
                 child: _FloatingHeader(

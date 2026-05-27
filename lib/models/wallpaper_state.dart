@@ -53,11 +53,11 @@ class WallpaperState extends ChangeNotifier {
     await fetch(reset: true);
   }
 
-  void changeSource(WallpaperSource source) {
-    if (_source == source) return;
+  Future<void> changeSource(WallpaperSource source) async {
+    if (_source == source && _wallpapers.isNotEmpty) return;
     _source = source;
     _selected = null;
-    notifyListeners();
+    await fetch(reset: true);
   }
 
   List<Wallpaper> relatedWallpapers(Wallpaper wallpaper) {
@@ -82,6 +82,7 @@ class WallpaperState extends ChangeNotifier {
 
       final next = await _api.fetchWallpapers(
         category: _category,
+        source: _source,
         start: _page * WallpaperApiService.perCategoryCount,
         seed: _sessionSeed,
       );
