@@ -35,6 +35,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Validate Pexels API Key
+        run: test -n "${{ secrets.PEXELS_API_KEY }}"
+
       - name: Analyze project
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

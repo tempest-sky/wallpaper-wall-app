@@ -108,7 +108,7 @@ class WallpaperApiService {
       ),
       _fetchBing(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
       _fetchPicsum(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
-      _fetchPexels(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
+      if (_pexelsApiKey.isNotBlank) _fetchPexels(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
       _fetchYuanfang(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
       _fetchYuanmeng(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
     ];
@@ -241,7 +241,9 @@ class WallpaperApiService {
   }
 
   Future<List<Wallpaper>> _fetchPexels({required int start, required int seed}) async {
-    if (_pexelsApiKey.isBlank) return <Wallpaper>[];
+    if (_pexelsApiKey.isBlank) {
+      throw const WallpaperApiException('Pexels API Key 未配置：请通过 --dart-define=PEXELS_API_KEY 或 GitHub Secret 注入');
+    }
 
     final queries = <String>['nature wallpaper', 'landscape', 'mountain', 'ocean', 'city night', 'forest'];
     final query = queries[(seed + start).abs() % queries.length];
@@ -272,6 +274,8 @@ class WallpaperApiService {
       final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
       final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
       final photographer = '${item['photographer'] ?? 'Pexels'}';
+      final photographerUrl = '${item['photographer_url'] ?? ''}';
+      final pageUrl = '${item['url'] ?? ''}';
       return Wallpaper(
         id: id,
         name: 'Pexels · $photographer',
@@ -281,7 +285,10 @@ class WallpaperApiService {
         height: height,
         category: WallpaperCategory.general,
         source: WallpaperSource.pexels,
-        origin: '$width×$height · Pexels 高清图库',
+        origin: '$width×$height · Photo by $photographer on Pexels',
+        authorName: photographer,
+        authorUrl: photographerUrl.isBlank ? null : photographerUrl,
+        sourceUrl: pageUrl.isBlank ? 'https://www.pexels.com' : pageUrl,
       );
     }).where((wallpaper) => wallpaper.url.isNotEmpty).toList();
 
@@ -387,4 +394,5 @@ class WallpaperApiException implements Exception {
 
 extension _StringBlank on String {
   bool get isBlank => trim().isEmpty;
+  bool get isNotBlank => trim().isNotEmpty;
 }

@@ -99,6 +99,9 @@ class Wallpaper {
     required this.category,
     required this.source,
     required this.origin,
+    this.authorName,
+    this.authorUrl,
+    this.sourceUrl,
   });
 
   final String id;
@@ -110,6 +113,9 @@ class Wallpaper {
   final WallpaperCategory category;
   final WallpaperSource source;
   final String origin;
+  final String? authorName;
+  final String? authorUrl;
+  final String? sourceUrl;
 
   double get aspectRatio {
     if (height == 0) return 16 / 9;

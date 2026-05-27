@@ -39,6 +39,24 @@ APK 输出路径：
 build/app/outputs/flutter-apk/app-release.apk
 ```
 
+## Pexels API Key 配置
+
+Pexels 来源不会在源码中硬编码密钥。构建时必须注入：
+
+```bash
+flutter build apk --release --dart-define=PEXELS_API_KEY=你的_Pexels_API_Key
+```
+
+GitHub Actions 需要配置仓库 Secret：
+
+```text
+PEXELS_API_KEY
+```
+
+若 Secret 未配置，云端构建会在 `Validate Pexels API Key` 步骤失败，避免生成 Pexels 不可用的 APK。
+
+Pexels 图片会在界面中显示摄影师署名，并提供来源链接入口。
+
 ## Android HTTP 配置
 
 360 API 的 HTTPS 端点在当前测试网络不可达，因此接口请求使用 HTTP。

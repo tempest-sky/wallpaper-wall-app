@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_settings_state.dart';
 import '../models/wallpaper.dart';
@@ -134,6 +135,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _openExternalUrl(BuildContext context, String? url) async {
+    if (url == null || url.trim().isEmpty) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('链接格式无效')));
+      return;
+    }
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      messenger.showSnackBar(const SnackBar(content: Text('无法打开外部链接')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<WallpaperState>(
@@ -197,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     wallpaper: state.selected!,
                     saving: state.saving,
                     onOpenOriginal: () => _openPreview(context, state.selected!),
+                    onOpenSource: () => _openExternalUrl(context, state.selected!.sourceUrl),
                     onSave: () => _save(context, state.selected!),
                   ),
                 ),
@@ -320,12 +336,14 @@ class _SelectedSheet extends StatelessWidget {
     required this.wallpaper,
     required this.saving,
     required this.onOpenOriginal,
+    required this.onOpenSource,
     required this.onSave,
   });
 
   final Wallpaper wallpaper;
   final bool saving;
   final VoidCallback onOpenOriginal;
+  final VoidCallback onOpenSource;
   final VoidCallback onSave;
 
   @override
@@ -356,7 +374,7 @@ class _SelectedSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${wallpaper.source.label} · ${wallpaper.origin}',
+                  wallpaper.authorName == null ? '${wallpaper.source.label} · ${wallpaper.origin}' : 'Photo by ${wallpaper.authorName} on Pexels',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -365,6 +383,10 @@ class _SelectedSheet extends StatelessWidget {
             ),
           ),
           GlassButton(icon: Icons.open_in_full_rounded, tooltip: '放大预览', onPressed: onOpenOriginal),
+          if (wallpaper.sourceUrl != null) ...<Widget>[
+            const SizedBox(width: 6),
+            GlassButton(icon: Icons.link_rounded, tooltip: '打开来源', onPressed: onOpenSource),
+          ],
           const SizedBox(width: 6),
           GlassButton(
             icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
