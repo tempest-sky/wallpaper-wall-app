@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/wallpaper.dart';
+import 'glass_button.dart';
+import 'glass_panel.dart';
 
 class WallpaperCard extends StatelessWidget {
   const WallpaperCard({
@@ -35,7 +37,7 @@ class WallpaperCard extends StatelessWidget {
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: selected ? scheme.primary.withOpacity(0.28) : Colors.black.withOpacity(0.18),
+            color: selected ? scheme.primary.withOpacity(0.28) : Colors.black.withOpacity(0.16),
             blurRadius: selected ? 24 : 14,
             offset: const Offset(0, 8),
           ),
@@ -44,7 +46,7 @@ class WallpaperCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(21),
         child: Material(
-          color: scheme.surfaceVariant.withOpacity(0.28),
+          color: scheme.surfaceVariant.withOpacity(0.22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,29 +57,27 @@ class WallpaperCard extends StatelessWidget {
                   children: <Widget>[
                     AspectRatio(
                       aspectRatio: ratio,
-                      child: Hero(
-                        tag: 'wallpaper-${wallpaper.id}',
-                        child: CachedNetworkImage(
-                          imageUrl: wallpaper.url,
-                          fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 180),
-                          placeholder: (context, url) => ColoredBox(
-                            color: scheme.surfaceVariant,
-                            child: const Center(
-                              child: SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
+                      child: CachedNetworkImage(
+                        imageUrl: wallpaper.url,
+                        fit: BoxFit.cover,
+                        fadeInDuration: const Duration(milliseconds: 120),
+                        placeholder: (context, url) => ColoredBox(
+                          color: scheme.surfaceVariant,
+                          child: const Center(
+                            child: SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ),
-                          errorWidget: (context, url, error) => ColoredBox(
-                            color: scheme.errorContainer,
-                            child: Icon(Icons.broken_image_rounded, color: scheme.error),
-                          ),
+                        ),
+                        errorWidget: (context, url, error) => ColoredBox(
+                          color: scheme.errorContainer,
+                          child: Icon(Icons.broken_image_rounded, color: scheme.error),
                         ),
                       ),
                     ),
                     Positioned(left: 10, top: 10, child: _Pill(text: wallpaper.category.label)),
+                    Positioned(left: 10, bottom: 10, child: _Pill(text: wallpaper.source.label)),
                     if (selected)
                       Positioned(
                         right: 10,
@@ -115,18 +115,20 @@ class WallpaperCard extends StatelessWidget {
                     Row(
                       children: <Widget>[
                         Expanded(
-                          child: _CompactActionButton(
+                          child: GlassButton(
                             icon: Icons.open_in_full_rounded,
                             label: '原图',
+                            tooltip: '放大预览',
                             onPressed: onOpenOriginal,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _CompactActionButton(
+                          child: GlassButton(
                             icon: Icons.download_rounded,
                             label: '保存',
-                            filled: true,
+                            tooltip: '保存到相册',
+                            selected: true,
                             onPressed: onSave,
                           ),
                         ),
@@ -139,48 +141,6 @@ class WallpaperCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _CompactActionButton extends StatelessWidget {
-  const _CompactActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.filled = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 36,
-      child: filled
-          ? FilledButton.icon(
-              onPressed: onPressed,
-              icon: Icon(icon, size: 16),
-              label: Text(label, maxLines: 1),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-              ),
-            )
-          : OutlinedButton.icon(
-              onPressed: onPressed,
-              icon: Icon(icon, size: 16),
-              label: Text(label, maxLines: 1),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: scheme.onSurface,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-              ),
-            ),
     );
   }
 }
@@ -217,18 +177,13 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.46),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
-        ),
+    return GlassPanel(
+      borderRadius: 999,
+      opacity: 0.32,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
       ),
     );
   }

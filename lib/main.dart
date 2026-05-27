@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'models/app_settings_state.dart';
 import 'models/wallpaper_state.dart';
 import 'screens/home_screen.dart';
 
@@ -14,15 +15,22 @@ class WallpaperWallApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<WallpaperState>(
-      create: (_) => WallpaperState(),
-      child: MaterialApp(
-        title: 'Wallpaper Wall',
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: _buildTheme(Brightness.light),
-        darkTheme: _buildTheme(Brightness.dark),
-        home: const HomeScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<WallpaperState>(create: (_) => WallpaperState()),
+        ChangeNotifierProvider<AppSettingsState>(create: (_) => AppSettingsState()),
+      ],
+      child: Consumer<AppSettingsState>(
+        builder: (context, settings, _) {
+          return MaterialApp(
+            title: 'Wallpaper Wall',
+            debugShowCheckedModeBanner: false,
+            themeMode: settings.themeMode,
+            theme: _buildTheme(Brightness.light),
+            darkTheme: _buildTheme(Brightness.dark),
+            home: const HomeScreen(),
+          );
+        },
       ),
     );
   }

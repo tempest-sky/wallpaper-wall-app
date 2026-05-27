@@ -2,13 +2,17 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../models/app_settings_state.dart';
 import '../models/wallpaper.dart';
 import '../models/wallpaper_state.dart';
 import '../widgets/category_filter_bar.dart';
+import '../widgets/glass_button.dart';
+import '../widgets/glass_panel.dart';
+import '../widgets/source_filter_bar.dart';
 import '../widgets/wallpaper_grid.dart';
 import 'slideshow_screen.dart';
+import 'wallpaper_preview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -72,28 +76,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openOriginal(BuildContext context, Wallpaper wallpaper) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final uri = Uri.tryParse(wallpaper.downloadUrl);
-    if (uri == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('原图链接无效')));
-      return;
-    }
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened) {
-      messenger.showSnackBar(const SnackBar(content: Text('无法打开原图')));
-    }
+  void _openPreview(BuildContext context, Wallpaper wallpaper) {
+    final state = context.read<WallpaperState>();
+    final related = state.relatedWallpapers(wallpaper);
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (_, animation, __) => FadeTransition(
+          opacity: animation,
+          child: WallpaperPreviewScreen(
+            wallpapers: related,
+            initialWallpaper: wallpaper,
+          ),
+        ),
+      ),
+    );
   }
 
   void _openSlideshowFromTop(BuildContext context) {
     final state = context.read<WallpaperState>();
-    if (state.wallpapers.isEmpty) return;
-    final initial = state.selected ?? state.wallpapers.first;
+    final visible = state.visibleWallpapers;
+    if (visible.isEmpty) return;
+    final initial = state.selected ?? visible.first;
     _openSlideshow(context, initial);
   }
 
   void _openSlideshow(BuildContext context, Wallpaper wallpaper) {
     final state = context.read<WallpaperState>();
+    final related = state.relatedWallpapers(wallpaper);
     state.select(wallpaper);
     Navigator.of(context).push(
       PageRouteBuilder<void>(
@@ -103,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
         pageBuilder: (_, animation, __) => FadeTransition(
           opacity: animation,
           child: SlideshowScreen(
-            wallpapers: state.wallpapers,
+            wallpapers: related,
             initialWallpaper: wallpaper,
           ),
         ),
@@ -123,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Consumer<WallpaperState>(
       builder: (context, state, _) {
+        final visible = state.visibleWallpapers;
         return Scaffold(
           extendBody: true,
           body: Stack(
@@ -133,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: <Widget>[
-                    SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).top + 112)),
+                    SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).top + 156)),
                     if (state.error != null)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -142,11 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     WallpaperGrid(
-                      wallpapers: state.wallpapers,
+                      wallpapers: visible,
                       selected: state.selected,
                       loading: state.loading,
                       onSelect: state.select,
-                      onOpenOriginal: (wallpaper) => _openOriginal(context, wallpaper),
+                      onOpenOriginal: (wallpaper) => _openPreview(context, wallpaper),
                       onSave: (wallpaper) => _save(context, wallpaper),
                     ),
                   ],
@@ -155,15 +168,18 @@ class _HomeScreenState extends State<HomeScreen> {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 240),
                 curve: Curves.easeOutCubic,
-                top: _headerVisible ? 0 : -118,
+                top: _headerVisible ? 0 : -162,
                 left: 0,
                 right: 0,
                 child: _FloatingHeader(
-                  selected: state.category,
-                  count: state.wallpapers.length,
+                  selectedCategory: state.category,
+                  selectedSource: state.source,
+                  count: visible.length,
+                  totalCount: state.wallpapers.length,
                   loading: state.loading,
-                  canPlay: state.wallpapers.isNotEmpty,
+                  canPlay: visible.isNotEmpty,
                   onCategoryChanged: state.changeCategory,
+                  onSourceChanged: state.changeSource,
                   onRefresh: () => state.fetch(reset: true),
                   onPlay: () => _openSlideshowFromTop(context),
                   onTop: _scrollToTop,
@@ -177,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _SelectedSheet(
                     wallpaper: state.selected!,
                     saving: state.saving,
-                    onOpenOriginal: () => _openOriginal(context, state.selected!),
+                    onOpenOriginal: () => _openPreview(context, state.selected!),
                     onSave: () => _save(context, state.selected!),
                   ),
                 ),
@@ -191,21 +207,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _FloatingHeader extends StatelessWidget {
   const _FloatingHeader({
-    required this.selected,
+    required this.selectedCategory,
+    required this.selectedSource,
     required this.count,
+    required this.totalCount,
     required this.loading,
     required this.canPlay,
     required this.onCategoryChanged,
+    required this.onSourceChanged,
     required this.onRefresh,
     required this.onPlay,
     required this.onTop,
   });
 
-  final WallpaperCategory selected;
+  final WallpaperCategory selectedCategory;
+  final WallpaperSource selectedSource;
   final int count;
+  final int totalCount;
   final bool loading;
   final bool canPlay;
   final ValueChanged<WallpaperCategory> onCategoryChanged;
+  final ValueChanged<WallpaperSource> onSourceChanged;
   final VoidCallback onRefresh;
   final VoidCallback onPlay;
   final VoidCallback onTop;
@@ -213,13 +235,14 @@ class _FloatingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final settings = context.watch<AppSettingsState>();
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 6),
           decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.86),
+            color: scheme.surface.withOpacity(0.74),
             border: Border(bottom: BorderSide(color: scheme.outlineVariant.withOpacity(0.28))),
           ),
           child: Column(
@@ -251,7 +274,7 @@ class _FloatingHeader extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
                           ),
                           Text(
-                            '$count 张 · ${selected.sourceLabel}',
+                            '$count/$totalCount 张 · ${selectedSource.longLabel}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
@@ -259,29 +282,26 @@ class _FloatingHeader extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton.filledTonal(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onTop,
-                      icon: const Icon(Icons.vertical_align_top_rounded, size: 20),
+                    GlassButton(icon: Icons.vertical_align_top_rounded, tooltip: '回到顶部', onPressed: onTop),
+                    const SizedBox(width: 6),
+                    GlassButton(icon: Icons.play_arrow_rounded, tooltip: '播放幻灯片', onPressed: canPlay ? onPlay : null, selected: true),
+                    const SizedBox(width: 6),
+                    GlassButton(
+                      icon: settings.themeIcon,
+                      tooltip: settings.themeLabel,
+                      onPressed: settings.toggleTheme,
                     ),
                     const SizedBox(width: 6),
-                    IconButton.filledTonal(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: canPlay ? onPlay : null,
-                      icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                    ),
-                    const SizedBox(width: 6),
-                    IconButton.filled(
-                      visualDensity: VisualDensity.compact,
+                    GlassButton(
+                      icon: loading ? Icons.hourglass_top_rounded : Icons.refresh_rounded,
+                      tooltip: '刷新',
                       onPressed: loading ? null : onRefresh,
-                      icon: loading
-                          ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.refresh_rounded, size: 20),
                     ),
                   ],
                 ),
               ),
-              CategoryFilterBar(selected: selected, onChanged: onCategoryChanged),
+              CategoryFilterBar(selected: selectedCategory, onChanged: onCategoryChanged),
+              SourceFilterBar(selected: selectedSource, onChanged: onSourceChanged),
             ],
           ),
         ),
@@ -306,54 +326,47 @@ class _SelectedSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.35)),
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withOpacity(0.24), blurRadius: 24, offset: const Offset(0, 12)),
+    return GlassPanel(
+      borderRadius: 24,
+      opacity: 0.62,
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        children: <Widget>[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.network(wallpaper.url, width: 54, height: 70, fit: BoxFit.cover),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  wallpaper.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${wallpaper.source.label} · ${wallpaper.origin}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          GlassButton(icon: Icons.open_in_full_rounded, tooltip: '放大预览', onPressed: onOpenOriginal),
+          const SizedBox(width: 6),
+          GlassButton(
+            icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
+            tooltip: '保存',
+            selected: true,
+            onPressed: saving ? null : onSave,
+          ),
         ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(wallpaper.url, width: 54, height: 70, fit: BoxFit.cover),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    wallpaper.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    wallpaper.origin,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            IconButton.filledTonal(onPressed: onOpenOriginal, icon: const Icon(Icons.open_in_full_rounded, size: 20)),
-            IconButton.filled(
-              onPressed: saving ? null : onSave,
-              icon: saving
-                  ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.download_rounded, size: 20),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -18,6 +18,7 @@ class WallpaperState extends ChangeNotifier {
   final Set<String> _knownUrls = <String>{};
 
   WallpaperCategory _category = WallpaperCategory.all;
+  WallpaperSource _source = WallpaperSource.all;
   Wallpaper? _selected;
   bool _loading = false;
   bool _saving = false;
@@ -25,7 +26,13 @@ class WallpaperState extends ChangeNotifier {
   int _page = 0;
 
   List<Wallpaper> get wallpapers => List.unmodifiable(_wallpapers);
+  List<Wallpaper> get visibleWallpapers {
+    if (_source == WallpaperSource.all) return List.unmodifiable(_wallpapers);
+    return List.unmodifiable(_wallpapers.where((wallpaper) => wallpaper.source == _source));
+  }
+
   WallpaperCategory get category => _category;
+  WallpaperSource get source => _source;
   Wallpaper? get selected => _selected;
   bool get loading => _loading;
   bool get saving => _saving;
@@ -42,6 +49,19 @@ class WallpaperState extends ChangeNotifier {
     _category = category;
     _selected = null;
     await fetch(reset: true);
+  }
+
+  void changeSource(WallpaperSource source) {
+    if (_source == source) return;
+    _source = source;
+    _selected = null;
+    notifyListeners();
+  }
+
+  List<Wallpaper> relatedWallpapers(Wallpaper wallpaper) {
+    final visible = visibleWallpapers;
+    if (visible.any((item) => item.id == wallpaper.id)) return visible;
+    return _wallpapers;
   }
 
   Future<void> fetch({bool reset = false}) async {

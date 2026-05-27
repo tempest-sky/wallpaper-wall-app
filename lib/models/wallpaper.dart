@@ -6,6 +6,13 @@ enum WallpaperCategory {
   random,
 }
 
+enum WallpaperSource {
+  all,
+  qh360,
+  bing,
+  picsum,
+}
+
 extension WallpaperCategoryLabel on WallpaperCategory {
   String get label {
     switch (this) {
@@ -25,15 +32,43 @@ extension WallpaperCategoryLabel on WallpaperCategory {
   String get sourceLabel {
     switch (this) {
       case WallpaperCategory.all:
-        return '360 · 混合分类';
+        return '混合内容';
       case WallpaperCategory.general:
-        return '360 · 风景大片';
+        return '风景大片';
       case WallpaperCategory.anime:
-        return '360 · 动漫卡通';
+        return '动漫卡通';
       case WallpaperCategory.people:
-        return '360 · 美女模特';
+        return '人物写真';
       case WallpaperCategory.random:
-        return '360 · 4K 专区';
+        return '随机精选';
+    }
+  }
+}
+
+extension WallpaperSourceLabel on WallpaperSource {
+  String get label {
+    switch (this) {
+      case WallpaperSource.all:
+        return '全部来源';
+      case WallpaperSource.qh360:
+        return '360';
+      case WallpaperSource.bing:
+        return 'Bing';
+      case WallpaperSource.picsum:
+        return 'Picsum';
+    }
+  }
+
+  String get longLabel {
+    switch (this) {
+      case WallpaperSource.all:
+        return '全部来源';
+      case WallpaperSource.qh360:
+        return '360 壁纸';
+      case WallpaperSource.bing:
+        return 'Bing 每日壁纸';
+      case WallpaperSource.picsum:
+        return 'Picsum 随机摄影';
     }
   }
 }
@@ -47,6 +82,7 @@ class Wallpaper {
     required this.width,
     required this.height,
     required this.category,
+    required this.source,
     required this.origin,
   });
 
@@ -57,6 +93,7 @@ class Wallpaper {
   final int width;
   final int height;
   final WallpaperCategory category;
+  final WallpaperSource source;
   final String origin;
 
   double get aspectRatio {

@@ -133,6 +133,7 @@ class WallpaperApiService {
         width: 1920,
         height: 1080,
         category: WallpaperCategory.general,
+        source: WallpaperSource.bing,
         origin: '1920×1080 · Bing 每日壁纸',
       );
     }).toList();
@@ -168,6 +169,7 @@ class WallpaperApiService {
         width: width,
         height: height,
         category: WallpaperCategory.random,
+        source: WallpaperSource.picsum,
         origin: '$width×$height · Picsum 随机图',
       );
     }).toList();
@@ -191,6 +193,7 @@ class WallpaperApiService {
       width: width,
       height: height,
       category: category,
+      source: WallpaperSource.qh360,
       origin: '${width > 0 ? width : '?'}×${height > 0 ? height : '?'} · 360 壁纸',
     );
   }
