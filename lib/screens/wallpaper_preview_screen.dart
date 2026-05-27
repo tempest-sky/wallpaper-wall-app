@@ -34,16 +34,30 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
     super.initState();
     final found = widget.wallpapers.indexWhere((item) => item.id == widget.initialWallpaper.id);
     _index = found < 0 ? 0 : found;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _precacheAround());
+  }
+
+  void _precacheAround() {
+    if (!mounted || widget.wallpapers.isEmpty) return;
+    final current = _current;
+    final next = widget.wallpapers[(_index + 1) % widget.wallpapers.length];
+    final previous = widget.wallpapers[(_index - 1 + widget.wallpapers.length) % widget.wallpapers.length];
+    for (final item in <Wallpaper>[current, next, previous]) {
+      precacheImage(CachedNetworkImageProvider(item.url), context);
+      precacheImage(CachedNetworkImageProvider(item.downloadUrl), context);
+    }
   }
 
   void _next() {
     if (widget.wallpapers.isEmpty) return;
     setState(() => _index = (_index + 1) % widget.wallpapers.length);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _precacheAround());
   }
 
   void _previous() {
     if (widget.wallpapers.isEmpty) return;
     setState(() => _index = (_index - 1 + widget.wallpapers.length) % widget.wallpapers.length);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _precacheAround());
   }
 
   Future<void> _save() async {
@@ -63,100 +77,129 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-              child: Transform.scale(
-                scale: 1.12,
-                child: CachedNetworkImage(
-                  key: ValueKey('preview-bg-${wallpaper.id}'),
-                  imageUrl: wallpaper.url,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(child: Container(color: Colors.black.withOpacity(0.46))),
-          Positioned.fill(
-            child: PhotoView(
+      body: SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            _BlurredPreviewBackground(wallpaper: wallpaper),
+            PhotoView(
               key: ValueKey('preview-photo-${wallpaper.id}'),
               imageProvider: CachedNetworkImageProvider(wallpaper.downloadUrl),
               minScale: PhotoViewComputedScale.contained,
               initialScale: PhotoViewComputedScale.contained,
               maxScale: PhotoViewComputedScale.covered * 3.2,
               basePosition: Alignment.center,
-              tightMode: true,
               backgroundDecoration: const BoxDecoration(color: Colors.transparent),
               loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
               errorBuilder: (context, error, stackTrace) => const Center(
                 child: Icon(Icons.broken_image_rounded, color: Colors.white, size: 42),
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: <Widget>[
-                  GlassButton(
-                    icon: Icons.close_rounded,
-                    tooltip: '关闭',
-                    blurred: true,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GlassPanel(
-                      borderRadius: 999,
-                      opacity: 0.34,
-                      blurred: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      child: Text(
-                        '${_index + 1}/${widget.wallpapers.length} · ${wallpaper.name}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: 24,
-            child: SafeArea(
-              child: GlassPanel(
-                borderRadius: 30,
-                opacity: 0.38,
-                blurred: true,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(child: GlassButton(icon: Icons.skip_previous_rounded, label: '上一张', blurred: true, onPressed: _previous)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: GlassButton(
-                        icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
-                        label: saving ? '保存中' : '保存',
+            Align(
+              alignment: Alignment.topCenter,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: <Widget>[
+                      GlassButton(
+                        icon: Icons.close_rounded,
+                        tooltip: '关闭',
                         blurred: true,
-                        onPressed: saving ? null : _save,
+                        onPressed: () => Navigator.of(context).maybePop(),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
-                  ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GlassPanel(
+                          borderRadius: 999,
+                          opacity: 0.34,
+                          blurred: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Text(
+                            '${_index + 1}/${widget.wallpapers.length} · ${wallpaper.name}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                minimum: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                child: GlassPanel(
+                  borderRadius: 30,
+                  opacity: 0.38,
+                  blurred: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(child: GlassButton(icon: Icons.skip_previous_rounded, label: '上一张', blurred: true, onPressed: _previous)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GlassButton(
+                          icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
+                          label: saving ? '保存中' : '保存',
+                          blurred: true,
+                          onPressed: saving ? null : _save,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BlurredPreviewBackground extends StatelessWidget {
+  const _BlurredPreviewBackground({required this.wallpaper});
+
+  final Wallpaper wallpaper;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Color(0xFF15151A), Color(0xFF030305)],
           ),
-        ],
+        ),
+        child: ClipRect(
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+            child: Transform.scale(
+              scale: 1.45,
+              child: CachedNetworkImage(
+                key: ValueKey('preview-bg-${wallpaper.id}'),
+                imageUrl: wallpaper.url,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                fadeInDuration: const Duration(milliseconds: 120),
+                placeholder: (context, url) => const SizedBox.expand(),
+                errorWidget: (context, url, error) => const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
