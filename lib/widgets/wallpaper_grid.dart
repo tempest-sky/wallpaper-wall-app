@@ -15,8 +15,6 @@ class WallpaperGrid extends StatelessWidget {
     this.batchMode = false,
     this.batchSelectedIds = const <String>{},
     required this.loading,
-    this.batchMode = false,
-    this.batchSelectedIds = const <String>{},
   });
 
   final List<Wallpaper> wallpapers;

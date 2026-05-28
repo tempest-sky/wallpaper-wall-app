@@ -192,9 +192,9 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                         ),
                         const SizedBox(width: 8),
                         Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
-                        if (onSave != null) ...<Widget>[
+                        if (widget.onSave != null) ...<Widget>[
                           const SizedBox(width: 8),
-                          GlassButton(icon: Icons.download_rounded, tooltip: '保存原图', blurred: true, onPressed: onSave),
+                          GlassButton(icon: Icons.download_rounded, tooltip: '保存原图', blurred: true, onPressed: widget.onSave),
                         ],
                       ],
                     ),
