@@ -112,7 +112,7 @@ class WallpaperState extends ChangeNotifier {
       }
       _page += 1;
     } catch (error) {
-      _error = '\$error';
+      _error = '$error';
     } finally {
       _loading = false;
       notifyListeners();
@@ -163,7 +163,7 @@ class WallpaperState extends ChangeNotifier {
       _batchSelectedIds.clear();
       _batchMode = false;
     } catch (error) {
-      _error = '\$error';
+      _error = '$error';
     } finally {
       _saving = false;
       notifyListeners();
@@ -179,7 +179,7 @@ class WallpaperState extends ChangeNotifier {
     try {
       await _saveOne(wallpaper);
     } catch (error) {
-      _error = '\$error';
+      _error = '$error';
       rethrow;
     } finally {
       _saving = false;
@@ -195,12 +195,12 @@ class WallpaperState extends ChangeNotifier {
 
     final response = await http.get(Uri.parse(wallpaper.downloadUrl));
     if (response.statusCode != 200) {
-      throw WallpaperSaveException('下载失败：HTTP \${response.statusCode}');
+      throw WallpaperSaveException('下载失败：HTTP ${response.statusCode}');
     }
 
     final dir = await getTemporaryDirectory();
     final safeName = wallpaper.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-    final file = File('\${dir.path}/wallpaper_\$safeName.jpg');
+    final file = File('${dir.path}/wallpaper_$safeName.jpg');
     await file.writeAsBytes(response.bodyBytes, flush: true);
     await Gal.putImage(file.path, album: 'Wallpaper Wall');
   }

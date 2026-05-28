@@ -66,7 +66,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
       await context.read<WallpaperState>().saveToGallery(_current);
       messenger.showSnackBar(const SnackBar(content: Text('已保存到相册：Wallpaper Wall')));
     } catch (error) {
-      messenger.showSnackBar(SnackBar(content: Text('保存失败：\$error')));
+      messenger.showSnackBar(SnackBar(content: Text('保存失败：$error')));
     }
   }
 
@@ -91,7 +91,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                 clipBehavior: Clip.hardEdge,
                 child: RepaintBoundary(
                   child: PhotoView(
-                    key: ValueKey('preview-photo-\${wallpaper.id}'),
+                    key: ValueKey('preview-photo-${wallpaper.id}'),
                     imageProvider: CachedNetworkImageProvider(wallpaper.downloadUrl),
                     minScale: PhotoViewComputedScale.contained,
                     initialScale: PhotoViewComputedScale.contained,
@@ -128,7 +128,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                           blurred: true,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           child: Text(
-                            '\${_index + 1}/\${widget.wallpapers.length} · \${wallpaper.name}',
+                            '${_index + 1}/${widget.wallpapers.length} · ${wallpaper.name}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
@@ -198,7 +198,7 @@ class _BlurredPreviewBackground extends StatelessWidget {
             child: Transform.scale(
               scale: 1.45,
               child: CachedNetworkImage(
-                key: ValueKey('preview-bg-\${wallpaper.id}'),
+                key: ValueKey('preview-bg-${wallpaper.id}'),
                 imageUrl: wallpaper.url,
                 fit: BoxFit.cover,
                 width: double.infinity,
