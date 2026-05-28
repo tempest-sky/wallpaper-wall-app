@@ -74,7 +74,7 @@ class WallpaperApiService {
       case WallpaperSource.picsum:
         return _fetchPicsum(start: start, seed: seed);
       case WallpaperSource.pexels:
-        return _fetchPexels(start: start, seed: seed);
+        return _fetchPexels(category: category, start: start, seed: seed);
       case WallpaperSource.yuanfang:
         return _fetchYuanfang(start: start, seed: seed);
       case WallpaperSource.yuanmeng:
@@ -240,13 +240,13 @@ class WallpaperApiService {
     return list..shuffle(Random(seed + start + 53));
   }
 
-  Future<List<Wallpaper>> _fetchPexels({required int start, required int seed}) async {
+  Future<List<Wallpaper>> _fetchPexels({WallpaperCategory category = WallpaperCategory.all, required int start, required int seed}) async {
     if (_pexelsApiKey.isBlank) {
       throw const WallpaperApiException('Pexels API Key 未配置：请通过 --dart-define=PEXELS_API_KEY 或 GitHub Secret 注入');
     }
 
-    final queries = <String>['nature wallpaper', 'landscape', 'mountain', 'ocean', 'city night', 'forest'];
-    final query = queries[(seed + start).abs() % queries.length];
+    final recommendedQueries = <String>['nature wallpaper', 'landscape', 'mountain', 'ocean', 'city night', 'forest'];
+    final query = category.isPexelsCategory ? category.pexelsQuery : recommendedQueries[(seed + start).abs() % recommendedQueries.length];
     final page = ((seed.abs() + start) % 40) + 1;
     final uri = Uri.parse(_pexelsEndpoint).replace(
       queryParameters: <String, String>{
@@ -283,7 +283,7 @@ class WallpaperApiService {
         downloadUrl: original.isBlank ? display : original,
         width: width,
         height: height,
-        category: WallpaperCategory.general,
+        category: category.isPexelsCategory ? category : WallpaperCategory.general,
         source: WallpaperSource.pexels,
         origin: '$width×$height · Photo by $photographer on Pexels',
         authorName: photographer,

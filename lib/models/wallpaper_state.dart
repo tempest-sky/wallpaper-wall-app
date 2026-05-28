@@ -56,6 +56,11 @@ class WallpaperState extends ChangeNotifier {
   Future<void> changeSource(WallpaperSource source) async {
     if (_source == source && _wallpapers.isNotEmpty) return;
     _source = source;
+    if (_source == WallpaperSource.pexels) {
+      if (!_category.isPexelsCategory) _category = WallpaperCategory.all;
+    } else if (_category.isPexelsCategory) {
+      _category = WallpaperCategory.all;
+    }
     _selected = null;
     await fetch(reset: true);
   }

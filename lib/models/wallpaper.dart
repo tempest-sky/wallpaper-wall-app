@@ -4,6 +4,16 @@ enum WallpaperCategory {
   anime,
   people,
   random,
+  pexelsWallpaper,
+  pexelsBackground,
+  pexelsFlowers,
+  pexelsLandscape,
+  pexelsNature,
+  pexelsCity,
+  pexelsPortrait,
+  pexelsAnimals,
+  pexelsMinimal,
+  pexelsAbstract,
 }
 
 enum WallpaperSource {
@@ -29,6 +39,26 @@ extension WallpaperCategoryLabel on WallpaperCategory {
         return '人物';
       case WallpaperCategory.random:
         return '随机';
+      case WallpaperCategory.pexelsWallpaper:
+        return '壁纸';
+      case WallpaperCategory.pexelsBackground:
+        return '背景';
+      case WallpaperCategory.pexelsFlowers:
+        return '花卉';
+      case WallpaperCategory.pexelsLandscape:
+        return '景观';
+      case WallpaperCategory.pexelsNature:
+        return '自然';
+      case WallpaperCategory.pexelsCity:
+        return '城市';
+      case WallpaperCategory.pexelsPortrait:
+        return '人像';
+      case WallpaperCategory.pexelsAnimals:
+        return '动物';
+      case WallpaperCategory.pexelsMinimal:
+        return '极简';
+      case WallpaperCategory.pexelsAbstract:
+        return '抽象';
     }
   }
 
@@ -44,6 +74,78 @@ extension WallpaperCategoryLabel on WallpaperCategory {
         return '人物写真';
       case WallpaperCategory.random:
         return '随机精选';
+      case WallpaperCategory.pexelsWallpaper:
+        return 'Pexels 壁纸';
+      case WallpaperCategory.pexelsBackground:
+        return 'Pexels 背景';
+      case WallpaperCategory.pexelsFlowers:
+        return 'Pexels 花卉';
+      case WallpaperCategory.pexelsLandscape:
+        return 'Pexels 景观';
+      case WallpaperCategory.pexelsNature:
+        return 'Pexels 自然';
+      case WallpaperCategory.pexelsCity:
+        return 'Pexels 城市';
+      case WallpaperCategory.pexelsPortrait:
+        return 'Pexels 人像';
+      case WallpaperCategory.pexelsAnimals:
+        return 'Pexels 动物';
+      case WallpaperCategory.pexelsMinimal:
+        return 'Pexels 极简';
+      case WallpaperCategory.pexelsAbstract:
+        return 'Pexels 抽象';
+    }
+  }
+  bool get isPexelsCategory {
+    switch (this) {
+      case WallpaperCategory.pexelsWallpaper:
+      case WallpaperCategory.pexelsBackground:
+      case WallpaperCategory.pexelsFlowers:
+      case WallpaperCategory.pexelsLandscape:
+      case WallpaperCategory.pexelsNature:
+      case WallpaperCategory.pexelsCity:
+      case WallpaperCategory.pexelsPortrait:
+      case WallpaperCategory.pexelsAnimals:
+      case WallpaperCategory.pexelsMinimal:
+      case WallpaperCategory.pexelsAbstract:
+        return true;
+      case WallpaperCategory.all:
+      case WallpaperCategory.general:
+      case WallpaperCategory.anime:
+      case WallpaperCategory.people:
+      case WallpaperCategory.random:
+        return false;
+    }
+  }
+
+  String get pexelsQuery {
+    switch (this) {
+      case WallpaperCategory.pexelsWallpaper:
+        return 'wallpaper';
+      case WallpaperCategory.pexelsBackground:
+        return 'background';
+      case WallpaperCategory.pexelsFlowers:
+        return 'flowers';
+      case WallpaperCategory.pexelsLandscape:
+        return 'landscape';
+      case WallpaperCategory.pexelsNature:
+        return 'nature';
+      case WallpaperCategory.pexelsCity:
+        return 'city';
+      case WallpaperCategory.pexelsPortrait:
+        return 'portrait';
+      case WallpaperCategory.pexelsAnimals:
+        return 'animals';
+      case WallpaperCategory.pexelsMinimal:
+        return 'minimal';
+      case WallpaperCategory.pexelsAbstract:
+        return 'abstract';
+      case WallpaperCategory.all:
+      case WallpaperCategory.general:
+      case WallpaperCategory.anime:
+      case WallpaperCategory.people:
+      case WallpaperCategory.random:
+        return 'nature wallpaper';
     }
   }
 }

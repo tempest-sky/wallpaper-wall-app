@@ -321,7 +321,7 @@ class _FloatingHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              CategoryFilterBar(selected: selectedCategory, onChanged: onCategoryChanged),
+              CategoryFilterBar(selected: selectedCategory, source: selectedSource, onChanged: onCategoryChanged),
               SourceFilterBar(selected: selectedSource, onChanged: onSourceChanged),
             ],
           ),
