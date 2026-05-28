@@ -12,7 +12,11 @@ class WallpaperGrid extends StatelessWidget {
     required this.onSelect,
     required this.onOpenOriginal,
     required this.onSave,
+    this.batchMode = false,
+    this.batchSelectedIds = const <String>{},
     required this.loading,
+    this.batchMode = false,
+    this.batchSelectedIds = const <String>{},
   });
 
   final List<Wallpaper> wallpapers;
@@ -21,6 +25,8 @@ class WallpaperGrid extends StatelessWidget {
   final ValueChanged<Wallpaper> onOpenOriginal;
   final ValueChanged<Wallpaper> onSave;
   final bool loading;
+  final bool batchMode;
+  final Set<String> batchSelectedIds;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +89,8 @@ class WallpaperGrid extends StatelessWidget {
               return WallpaperCard(
                 wallpaper: wallpaper,
                 selected: selected?.id == wallpaper.id,
+                batchMode: batchMode,
+                batchSelected: batchSelectedIds.contains(wallpaper.id),
                 onSelect: () => onSelect(wallpaper),
                 onOpenOriginal: () => onOpenOriginal(wallpaper),
                 onSave: () => onSave(wallpaper),

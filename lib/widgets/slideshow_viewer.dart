@@ -14,11 +14,13 @@ class SlideshowViewer extends StatefulWidget {
     required this.wallpapers,
     required this.initialIndex,
     required this.onClose,
+    this.onSave,
   });
 
   final List<Wallpaper> wallpapers;
   final int initialIndex;
   final VoidCallback onClose;
+  final VoidCallback? onSave;
 
   @override
   State<SlideshowViewer> createState() => _SlideshowViewerState();
@@ -190,6 +192,10 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                         ),
                         const SizedBox(width: 8),
                         Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
+                        if (onSave != null) ...<Widget>[
+                          const SizedBox(width: 8),
+                          GlassButton(icon: Icons.download_rounded, tooltip: '保存原图', blurred: true, onPressed: onSave),
+                        ],
                       ],
                     ),
                   ),

@@ -27,6 +27,10 @@ class WallpaperState extends ChangeNotifier {
   int _page = 0;
   int _sessionSeed = DateTime.now().millisecondsSinceEpoch;
 
+  // ── Batch selection ──
+  final Set<String> _batchSelectedIds = <String>{};
+  bool _batchMode = false;
+
   List<Wallpaper> get wallpapers => List.unmodifiable(_wallpapers);
   List<Wallpaper> get visibleWallpapers {
     if (_source == WallpaperSource.all) return List.unmodifiable(_wallpapers);
@@ -41,6 +45,11 @@ class WallpaperState extends ChangeNotifier {
   String? get error => _error;
   bool get hasSelected => _selected != null;
 
+  // ── Batch getters ──
+  Set<String> get batchSelectedIds => Set.unmodifiable(_batchSelectedIds);
+  bool get batchMode => _batchMode;
+  int get batchCount => _batchSelectedIds.length;
+
   Future<void> bootstrap() async {
     if (_wallpapers.isNotEmpty || _loading) return;
     await fetch(reset: true);
@@ -50,6 +59,8 @@ class WallpaperState extends ChangeNotifier {
     if (_category == category && _wallpapers.isNotEmpty) return;
     _category = category;
     _selected = null;
+    _batchMode = false;
+    _batchSelectedIds.clear();
     await fetch(reset: true);
   }
 
@@ -62,6 +73,8 @@ class WallpaperState extends ChangeNotifier {
       _category = WallpaperCategory.all;
     }
     _selected = null;
+    _batchMode = false;
+    _batchSelectedIds.clear();
     await fetch(reset: true);
   }
 
@@ -99,7 +112,7 @@ class WallpaperState extends ChangeNotifier {
       }
       _page += 1;
     } catch (error) {
-      _error = '$error';
+      _error = '\$error';
     } finally {
       _loading = false;
       notifyListeners();
@@ -107,8 +120,54 @@ class WallpaperState extends ChangeNotifier {
   }
 
   void select(Wallpaper wallpaper) {
+    if (_batchMode) {
+      toggleBatchSelection(wallpaper);
+      return;
+    }
     _selected = wallpaper;
     notifyListeners();
+  }
+
+  // ── Batch ──
+  void toggleBatchMode() {
+    _batchMode = !_batchMode;
+    if (!_batchMode) {
+      _batchSelectedIds.clear();
+    }
+    _selected = null;
+    notifyListeners();
+  }
+
+  void toggleBatchSelection(Wallpaper wallpaper) {
+    if (_batchSelectedIds.contains(wallpaper.id)) {
+      _batchSelectedIds.remove(wallpaper.id);
+    } else {
+      _batchSelectedIds.add(wallpaper.id);
+    }
+    notifyListeners();
+  }
+
+  bool isBatchSelected(Wallpaper wallpaper) => _batchSelectedIds.contains(wallpaper.id);
+
+  Future<void> saveSelectedToGallery() async {
+    if (_batchSelectedIds.isEmpty) return;
+    _saving = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final targets = _wallpapers.where((w) => _batchSelectedIds.contains(w.id)).toList();
+      for (final wallpaper in targets) {
+        await _saveOne(wallpaper);
+      }
+      _batchSelectedIds.clear();
+      _batchMode = false;
+    } catch (error) {
+      _error = '\$error';
+    } finally {
+      _saving = false;
+      notifyListeners();
+    }
   }
 
   Future<void> saveToGallery(Wallpaper wallpaper) async {
@@ -118,28 +177,32 @@ class WallpaperState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final permission = await _requestSavePermission();
-      if (!permission) {
-        throw const WallpaperSaveException('未获得相册/存储权限');
-      }
-
-      final response = await http.get(Uri.parse(wallpaper.downloadUrl));
-      if (response.statusCode != 200) {
-        throw WallpaperSaveException('下载失败：HTTP ${response.statusCode}');
-      }
-
-      final dir = await getTemporaryDirectory();
-      final safeName = wallpaper.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-      final file = File('${dir.path}/wallpaper_$safeName.jpg');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
-      await Gal.putImage(file.path, album: 'Wallpaper Wall');
+      await _saveOne(wallpaper);
     } catch (error) {
-      _error = '$error';
+      _error = '\$error';
       rethrow;
     } finally {
       _saving = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _saveOne(Wallpaper wallpaper) async {
+    final permission = await _requestSavePermission();
+    if (!permission) {
+      throw const WallpaperSaveException('未获得相册/存储权限');
+    }
+
+    final response = await http.get(Uri.parse(wallpaper.downloadUrl));
+    if (response.statusCode != 200) {
+      throw WallpaperSaveException('下载失败：HTTP \${response.statusCode}');
+    }
+
+    final dir = await getTemporaryDirectory();
+    final safeName = wallpaper.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    final file = File('\${dir.path}/wallpaper_\$safeName.jpg');
+    await file.writeAsBytes(response.bodyBytes, flush: true);
+    await Gal.putImage(file.path, album: 'Wallpaper Wall');
   }
 
   int _newSessionSeed() => DateTime.now().microsecondsSinceEpoch ^ Random().nextInt(1 << 31);

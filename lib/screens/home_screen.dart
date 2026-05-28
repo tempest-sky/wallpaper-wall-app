@@ -80,6 +80,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _saveBatch(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final state = context.read<WallpaperState>();
+    try {
+      final count = state.batchCount;
+      await state.saveSelectedToGallery();
+      messenger.showSnackBar(SnackBar(content: Text('已保存 $count 张壁纸到相册')));
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('批量保存失败：$error')));
+    }
+  }
+
   void _openPreview(BuildContext context, Wallpaper wallpaper) {
     final state = context.read<WallpaperState>();
     final related = state.relatedWallpapers(wallpaper);
@@ -135,6 +147,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _scrollToWallpaper(Wallpaper wallpaper) {
+    final state = context.read<WallpaperState>();
+    final visible = state.visibleWallpapers;
+    final idx = visible.indexWhere((w) => w.id == wallpaper.id);
+    if (idx < 0) return;
+    final row = idx ~/ 2;
+    final estimatedOffset = 166.0 + row * 190.0;
+    final max = _scrollController.position.maxScrollExtent;
+    _scrollController.animateTo(
+      estimatedOffset.clamp(0.0, max),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   Future<void> _openExternalUrl(BuildContext context, String? url) async {
     if (url == null || url.trim().isEmpty) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -176,6 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       wallpapers: visible,
                       selected: state.selected,
                       loading: state.loading,
+                      batchMode: state.batchMode,
+                      batchSelectedIds: state.batchSelectedIds,
                       onSelect: state.select,
                       onOpenOriginal: (wallpaper) => _openPreview(context, wallpaper),
                       onSave: (wallpaper) => _save(context, wallpaper),
@@ -196,14 +225,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   totalCount: state.wallpapers.length,
                   loading: state.loading,
                   canPlay: visible.isNotEmpty,
+                  batchMode: state.batchMode,
+                  batchCount: state.batchCount,
                   onCategoryChanged: state.changeCategory,
                   onSourceChanged: state.changeSource,
                   onRefresh: () => state.fetch(reset: true),
                   onPlay: () => _openSlideshowFromTop(context),
                   onTop: _scrollToTop,
+                  onBatchToggle: state.toggleBatchMode,
                 ),
               ),
-              if (state.selected != null)
+              if (state.batchMode && state.batchCount > 0)
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  bottom: 14,
+                  child: _BatchSheet(
+                    count: state.batchCount,
+                    saving: state.saving,
+                    onSave: () => _saveBatch(context),
+                    onCancel: state.toggleBatchMode,
+                  ),
+                ),
+              if (!state.batchMode && state.selected != null)
                 Positioned(
                   left: 14,
                   right: 14,
@@ -214,6 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onOpenOriginal: () => _openPreview(context, state.selected!),
                     onOpenSource: () => _openExternalUrl(context, state.selected!.sourceUrl),
                     onSave: () => _save(context, state.selected!),
+                    onPlaySlideshow: () => _openSlideshow(context, state.selected!),
+                    onLocate: () => _scrollToWallpaper(state.selected!),
                   ),
                 ),
             ],
@@ -232,11 +278,14 @@ class _FloatingHeader extends StatelessWidget {
     required this.totalCount,
     required this.loading,
     required this.canPlay,
+    required this.batchMode,
+    required this.batchCount,
     required this.onCategoryChanged,
     required this.onSourceChanged,
     required this.onRefresh,
     required this.onPlay,
     required this.onTop,
+    required this.onBatchToggle,
   });
 
   final WallpaperCategory selectedCategory;
@@ -245,11 +294,14 @@ class _FloatingHeader extends StatelessWidget {
   final int totalCount;
   final bool loading;
   final bool canPlay;
+  final bool batchMode;
+  final int batchCount;
   final ValueChanged<WallpaperCategory> onCategoryChanged;
   final ValueChanged<WallpaperSource> onSourceChanged;
   final VoidCallback onRefresh;
   final VoidCallback onPlay;
   final VoidCallback onTop;
+  final VoidCallback onBatchToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +339,7 @@ class _FloatingHeader extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Wallpaper Wall',
+                            batchMode ? '批量选择 ($batchCount)' : 'Wallpaper Wall',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -302,6 +354,14 @@ class _FloatingHeader extends StatelessWidget {
                       ),
                     ),
                     GlassButton(icon: Icons.vertical_align_top_rounded, tooltip: '回到顶部', onPressed: onTop, blurred: true),
+                    const SizedBox(width: 6),
+                    GlassButton(
+                      icon: batchMode ? Icons.checklist_rtl_rounded : Icons.checklist_rounded,
+                      tooltip: batchMode ? '取消批量' : '批量选择',
+                      selected: batchMode,
+                      blurred: true,
+                      onPressed: onBatchToggle,
+                    ),
                     const SizedBox(width: 6),
                     GlassButton(icon: Icons.play_arrow_rounded, tooltip: '播放幻灯片', onPressed: canPlay ? onPlay : null, selected: true, blurred: true),
                     const SizedBox(width: 6),
@@ -331,13 +391,15 @@ class _FloatingHeader extends StatelessWidget {
   }
 }
 
-class _SelectedSheet extends StatelessWidget {
+class _SelectedSheet extends StatefulWidget {
   const _SelectedSheet({
     required this.wallpaper,
     required this.saving,
     required this.onOpenOriginal,
     required this.onOpenSource,
     required this.onSave,
+    required this.onPlaySlideshow,
+    required this.onLocate,
   });
 
   final Wallpaper wallpaper;
@@ -345,6 +407,130 @@ class _SelectedSheet extends StatelessWidget {
   final VoidCallback onOpenOriginal;
   final VoidCallback onOpenSource;
   final VoidCallback onSave;
+  final VoidCallback onPlaySlideshow;
+  final VoidCallback onLocate;
+
+  @override
+  State<_SelectedSheet> createState() => _SelectedSheetState();
+}
+
+class _SelectedSheetState extends State<_SelectedSheet> with SingleTickerProviderStateMixin {
+  late final AnimationController _swipeController;
+  late final Animation<double> _opacityAnim;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _swipeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _opacityAnim = CurvedAnimation(parent: _swipeController, curve: Curves.easeOutCubic);
+    _slideAnim = Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.18)).animate(
+      CurvedAnimation(parent: _swipeController, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _swipeController.dispose();
+    super.dispose();
+  }
+
+  void _handleSwipeUp(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity < -280) {
+      _swipeController.forward().then((_) {
+        widget.onOpenOriginal();
+        _swipeController.reset();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onVerticalDragEnd: _handleSwipeUp,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: FadeTransition(
+          opacity: _opacityAnim,
+          child: GlassPanel(
+            borderRadius: 24,
+            opacity: 0.62,
+            blurred: true,
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: <Widget>[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: RepaintBoundary(
+                    child: Image.network(widget.wallpaper.url, width: 54, height: 70, fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        widget.wallpaper.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        widget.wallpaper.authorName == null
+                            ? '${widget.wallpaper.source.label} · ${widget.wallpaper.origin}'
+                            : 'Photo by ${widget.wallpaper.authorName} on Pexels',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                GlassButton(icon: Icons.open_in_full_rounded, tooltip: '上滑查看原图', onPressed: widget.onOpenOriginal),
+                if (widget.wallpaper.sourceUrl != null) ...<Widget>[
+                  const SizedBox(width: 6),
+                  GlassButton(icon: Icons.link_rounded, tooltip: '打开来源', onPressed: widget.onOpenSource),
+                ],
+                const SizedBox(width: 6),
+                GlassButton(icon: Icons.play_arrow_rounded, tooltip: '播放幻灯片', onPressed: widget.onPlaySlideshow),
+                const SizedBox(width: 6),
+                GlassButton(icon: Icons.my_location_rounded, tooltip: '定位到网格', onPressed: widget.onLocate),
+                const SizedBox(width: 6),
+                GlassButton(
+                  icon: widget.saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
+                  tooltip: '保存',
+                  selected: true,
+                  onPressed: widget.saving ? null : widget.onSave,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BatchSheet extends StatelessWidget {
+  const _BatchSheet({
+    required this.count,
+    required this.saving,
+    required this.onSave,
+    required this.onCancel,
+  });
+
+  final int count;
+  final bool saving;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -356,10 +542,7 @@ class _SelectedSheet extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: <Widget>[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.network(wallpaper.url, width: 54, height: 70, fit: BoxFit.cover),
-          ),
+          GlassButton(icon: Icons.close_rounded, tooltip: '取消', onPressed: onCancel),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -367,30 +550,22 @@ class _SelectedSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  wallpaper.name,
+                  '已选择 $count 张壁纸',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  wallpaper.authorName == null ? '${wallpaper.source.label} · ${wallpaper.origin}' : 'Photo by ${wallpaper.authorName} on Pexels',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  '点击保存到相册',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),
           ),
-          GlassButton(icon: Icons.open_in_full_rounded, tooltip: '放大预览', onPressed: onOpenOriginal),
-          if (wallpaper.sourceUrl != null) ...<Widget>[
-            const SizedBox(width: 6),
-            GlassButton(icon: Icons.link_rounded, tooltip: '打开来源', onPressed: onOpenSource),
-          ],
-          const SizedBox(width: 6),
           GlassButton(
             icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
-            tooltip: '保存',
+            label: saving ? '保存中' : '保存全部',
             selected: true,
             onPressed: saving ? null : onSave,
           ),

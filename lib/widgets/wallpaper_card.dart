@@ -13,6 +13,8 @@ class WallpaperCard extends StatefulWidget {
     required this.onSelect,
     required this.onOpenOriginal,
     required this.onSave,
+    this.batchMode = false,
+    this.batchSelected = false,
   });
 
   final Wallpaper wallpaper;
@@ -20,6 +22,8 @@ class WallpaperCard extends StatefulWidget {
   final VoidCallback onSelect;
   final VoidCallback onOpenOriginal;
   final VoidCallback onSave;
+  final bool batchMode;
+  final bool batchSelected;
 
   @override
   State<WallpaperCard> createState() => _WallpaperCardState();
@@ -133,6 +137,15 @@ class _WallpaperCardState extends State<WallpaperCard> with SingleTickerProvider
                               top: 10,
                               child: _SelectedPill(color: scheme.primary, textColor: scheme.onPrimary),
                             ),
+                          if (widget.batchMode)
+                            Positioned(
+                              right: 10,
+                              top: 10,
+                              child: _BatchCheckPill(
+                                selected: widget.batchSelected,
+                                color: scheme.primary,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -236,6 +249,35 @@ class _Pill extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _BatchCheckPill extends StatelessWidget {
+  const _BatchCheckPill({required this.selected, required this.color});
+
+  final bool selected;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: selected ? color : Colors.black.withOpacity(0.48),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: selected ? color : Colors.white.withOpacity(0.7),
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Icon(
+          selected ? Icons.check_rounded : Icons.circle_outlined,
+          size: 18,
+          color: Colors.white,
+        ),
       ),
     );
   }
