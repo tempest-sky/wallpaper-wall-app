@@ -5,7 +5,7 @@ import '../models/wallpaper.dart';
 import 'glass_button.dart';
 import 'glass_panel.dart';
 
-class WallpaperCard extends StatelessWidget {
+class WallpaperCard extends StatefulWidget {
   const WallpaperCard({
     super.key,
     required this.wallpaper,
@@ -22,122 +22,174 @@ class WallpaperCard extends StatelessWidget {
   final VoidCallback onSave;
 
   @override
+  State<WallpaperCard> createState() => _WallpaperCardState();
+}
+
+class _WallpaperCardState extends State<WallpaperCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.045), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant WallpaperCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wallpaper.id != widget.wallpaper.id) {
+      _controller
+        ..reset()
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final ratio = wallpaper.aspectRatio.clamp(0.58, 1.35).toDouble();
+    final ratio = widget.wallpaper.aspectRatio.clamp(0.58, 1.35).toDouble();
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: selected ? scheme.primary : scheme.outlineVariant.withOpacity(0.32),
-          width: selected ? 2 : 1,
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: selected ? scheme.primary.withOpacity(0.28) : Colors.black.withOpacity(0.16),
-            blurRadius: selected ? 24 : 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(21),
-        child: Material(
-          color: scheme.surfaceVariant.withOpacity(0.22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              InkWell(
-                onTap: onSelect,
-                child: Stack(
-                  children: <Widget>[
-                    AspectRatio(
-                      aspectRatio: ratio,
-                      child: CachedNetworkImage(
-                        imageUrl: wallpaper.url,
-                        fit: BoxFit.cover,
-                        fadeInDuration: const Duration(milliseconds: 120),
-                        placeholder: (context, url) => ColoredBox(
-                          color: scheme.surfaceVariant,
-                          child: const Center(
-                            child: SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => ColoredBox(
-                          color: scheme.errorContainer,
-                          child: Icon(Icons.broken_image_rounded, color: scheme.error),
-                        ),
-                      ),
-                    ),
-                    Positioned(left: 10, top: 10, child: _Pill(text: wallpaper.category.label)),
-                    Positioned(left: 10, bottom: 10, child: _Pill(text: wallpaper.source.label)),
-                    if (selected)
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: _SelectedPill(color: scheme.primary, textColor: scheme.onPrimary),
-                      ),
-                  ],
-                ),
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(
+        position: _slide,
+        child: AnimatedScale(
+          scale: widget.selected ? 0.985 : 1,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: widget.selected ? scheme.primary.withOpacity(0.72) : scheme.outlineVariant.withOpacity(0.28),
+                width: widget.selected ? 1.6 : 1,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: widget.selected ? scheme.primary.withOpacity(0.18) : Colors.black.withOpacity(0.10),
+                  blurRadius: widget.selected ? 22 : 12,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(21),
+              child: Material(
+                color: scheme.surfaceVariant.withOpacity(0.22),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      wallpaper.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            height: 1.05,
+                    InkWell(
+                      onTap: widget.onSelect,
+                      borderRadius: BorderRadius.circular(21),
+                      child: Stack(
+                        children: <Widget>[
+                          AspectRatio(
+                            aspectRatio: ratio,
+                            child: CachedNetworkImage(
+                              imageUrl: widget.wallpaper.url,
+                              fit: BoxFit.cover,
+                              fadeInDuration: const Duration(milliseconds: 160),
+                              fadeOutDuration: const Duration(milliseconds: 120),
+                              placeholder: (context, url) => ColoredBox(
+                                color: scheme.surfaceVariant.withOpacity(0.62),
+                                child: const Center(
+                                  child: SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => ColoredBox(
+                                color: scheme.errorContainer,
+                                child: Icon(Icons.broken_image_rounded, color: scheme.error),
+                              ),
+                            ),
                           ),
+                          Positioned(left: 10, top: 10, child: _Pill(text: widget.wallpaper.category.label)),
+                          Positioned(left: 10, bottom: 10, child: _Pill(text: widget.wallpaper.source.label)),
+                          if (widget.selected)
+                            Positioned(
+                              right: 10,
+                              top: 10,
+                              child: _SelectedPill(color: scheme.primary, textColor: scheme.onPrimary),
+                            ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      wallpaper.origin,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.0,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            widget.wallpaper.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.05,
+                                ),
                           ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: GlassButton(
-                            icon: Icons.open_in_full_rounded,
-                            label: '原图',
-                            tooltip: '放大预览',
-                            onPressed: onOpenOriginal,
+                          const SizedBox(height: 3),
+                          Text(
+                            widget.wallpaper.origin,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  height: 1.0,
+                                ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GlassButton(
-                            icon: Icons.download_rounded,
-                            label: '保存',
-                            tooltip: '保存到相册',
-                            selected: true,
-                            onPressed: onSave,
+                          const SizedBox(height: 8),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: GlassButton(
+                                  icon: Icons.open_in_full_rounded,
+                                  label: '原图',
+                                  tooltip: '放大预览',
+                                  onPressed: widget.onOpenOriginal,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: GlassButton(
+                                  icon: Icons.download_rounded,
+                                  label: '保存',
+                                  tooltip: '保存到相册',
+                                  selected: true,
+                                  onPressed: widget.onSave,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

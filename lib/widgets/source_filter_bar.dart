@@ -20,28 +20,33 @@ class SourceFilterBar extends StatelessWidget {
         itemBuilder: (context, index) {
           final source = WallpaperSource.values[index];
           final active = source == selected;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+          return AnimatedScale(
+            scale: active ? 1.025 : 1,
+            duration: const Duration(milliseconds: 160),
             curve: Curves.easeOutCubic,
-            child: ChoiceChip(
-              avatar: Icon(
-                _iconOf(source),
-                size: 17,
-                color: active ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: ChoiceChip(
+                avatar: Icon(
+                  _iconOf(source),
+                  size: 17,
+                  color: active ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+                ),
+                label: Text(source.label),
+                selected: active,
+                labelStyle: TextStyle(
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                  color: active ? scheme.onPrimaryContainer : scheme.onSurface,
+                ),
+                selectedColor: scheme.primaryContainer,
+                backgroundColor: scheme.surfaceContainerHighest.withOpacity(0.52),
+                side: BorderSide(
+                  color: active ? scheme.primary.withOpacity(0.38) : scheme.outlineVariant.withOpacity(0.32),
+                ),
+                visualDensity: VisualDensity.compact,
+                onSelected: (_) => onChanged(source),
               ),
-              label: Text(source.label),
-              selected: active,
-              labelStyle: TextStyle(
-                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                color: active ? scheme.onPrimaryContainer : scheme.onSurface,
-              ),
-              selectedColor: scheme.primaryContainer,
-              backgroundColor: scheme.surfaceContainerHighest.withOpacity(0.58),
-              side: BorderSide(
-                color: active ? scheme.primary.withOpacity(0.45) : scheme.outlineVariant.withOpacity(0.42),
-              ),
-              visualDensity: VisualDensity.compact,
-              onSelected: (_) => onChanged(source),
             ),
           );
         },

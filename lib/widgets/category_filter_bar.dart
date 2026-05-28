@@ -27,20 +27,32 @@ class CategoryFilterBar extends StatelessWidget {
         itemBuilder: (context, index) {
           final category = categories[index];
           final active = category == selected;
-          return FilterChip(
-            selected: active,
-            showCheckmark: false,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-            label: Text(category.label),
-            avatar: Icon(
-              _iconFor(category),
-              size: 18,
-              color: active
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+          return AnimatedScale(
+            scale: active ? 1.02 : 1,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            child: FilterChip(
+              selected: active,
+              showCheckmark: false,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              selectedColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.92),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.48),
+              side: BorderSide(
+                color: active
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.36)
+                    : Theme.of(context).colorScheme.outlineVariant.withOpacity(0.28),
+              ),
+              label: Text(category.label),
+              avatar: Icon(
+                _iconFor(category),
+                size: 18,
+                color: active
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              onSelected: (_) => onChanged(category),
             ),
-            onSelected: (_) => onChanged(category),
           );
         },
       ),
