@@ -147,21 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _scrollToWallpaper(Wallpaper wallpaper) {
-    final state = context.read<WallpaperState>();
-    final visible = state.visibleWallpapers;
-    final idx = visible.indexWhere((w) => w.id == wallpaper.id);
-    if (idx < 0) return;
-    final row = idx ~/ 2;
-    final estimatedOffset = 166.0 + row * 190.0;
-    final max = _scrollController.position.maxScrollExtent;
-    _scrollController.animateTo(
-      estimatedOffset.clamp(0.0, max),
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
   Future<void> _openExternalUrl(BuildContext context, String? url) async {
     if (url == null || url.trim().isEmpty) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -559,12 +544,20 @@ class _BatchSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '点击保存到相册',
+                  wallpaper.authorName == null ? '${wallpaper.source.label} · ${wallpaper.origin}' : 'Photo by ${wallpaper.authorName} on Pexels',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),
           ),
+          GlassButton(icon: Icons.open_in_full_rounded, tooltip: '放大预览', onPressed: onOpenOriginal),
+          if (wallpaper.sourceUrl != null) ...<Widget>[
+            const SizedBox(width: 6),
+            GlassButton(icon: Icons.link_rounded, tooltip: '打开来源', onPressed: onOpenSource),
+          ],
+          const SizedBox(width: 6),
           GlassButton(
             icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
             label: saving ? '保存中' : '保存全部',
