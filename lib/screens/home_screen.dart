@@ -415,35 +415,37 @@ class _SelectedSheet extends StatefulWidget {
 }
 
 class _SelectedSheetState extends State<_SelectedSheet> with SingleTickerProviderStateMixin {
-  late final AnimationController _swipeController;
-  late final Animation<double> _opacityAnim;
-  late final Animation<Offset> _slideAnim;
+  late final AnimationController _sheetController;
+  late final Animation<Offset> _sheetSlide;
+  late final Animation<double> _sheetOpacity;
 
   @override
   void initState() {
     super.initState();
-    _swipeController = AnimationController(
+    _sheetController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 380),
+      duration: const Duration(milliseconds: 420),
     );
-    _opacityAnim = CurvedAnimation(parent: _swipeController, curve: Curves.easeOutCubic);
-    _slideAnim = Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.18)).animate(
-      CurvedAnimation(parent: _swipeController, curve: Curves.easeOutCubic),
+    _sheetOpacity = CurvedAnimation(parent: _sheetController, curve: Curves.easeOutCubic);
+    _sheetSlide = Tween<Offset>(begin: const Offset(0, 0.22), end: Offset.zero).animate(
+      CurvedAnimation(parent: _sheetController, curve: Curves.easeOutCubic),
     );
+    _sheetController.forward();
   }
 
   @override
   void dispose() {
-    _swipeController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
   void _handleSwipeUp(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
     if (velocity < -280) {
-      _swipeController.forward().then((_) {
+      _sheetController.reverse().then((_) {
+        if (!mounted) return;
         widget.onOpenOriginal();
-        _swipeController.reset();
+        _sheetController.forward();
       });
     }
   }
@@ -454,9 +456,9 @@ class _SelectedSheetState extends State<_SelectedSheet> with SingleTickerProvide
     return GestureDetector(
       onVerticalDragEnd: _handleSwipeUp,
       child: SlideTransition(
-        position: _slideAnim,
+        position: _sheetSlide,
         child: FadeTransition(
-          opacity: _opacityAnim,
+          opacity: _sheetOpacity,
           child: GlassPanel(
             borderRadius: 24,
             opacity: 0.62,

@@ -83,27 +83,52 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
           clipBehavior: Clip.none,
           children: <Widget>[
             _BlurredPreviewBackground(wallpaper: wallpaper),
-            // Rounded corner preview with clip
             SafeArea(
               minimum: const EdgeInsets.fromLTRB(18, 86, 18, 86),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                clipBehavior: Clip.hardEdge,
-                child: RepaintBoundary(
-                  child: PhotoView(
-                    key: ValueKey('preview-photo-${wallpaper.id}'),
-                    imageProvider: CachedNetworkImageProvider(wallpaper.downloadUrl),
-                    minScale: PhotoViewComputedScale.contained,
-                    initialScale: PhotoViewComputedScale.contained,
-                    maxScale: PhotoViewComputedScale.covered * 3.2,
-                    basePosition: Alignment.center,
-                    backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-                    loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
-                    errorBuilder: (context, error, stackTrace) => const Center(
-                      child: Icon(Icons.broken_image_rounded, color: Colors.white, size: 42),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final imageRatio = wallpaper.aspectRatio <= 0 ? 9 / 16 : wallpaper.aspectRatio;
+                  final availableRatio = constraints.maxWidth / constraints.maxHeight;
+                  final double targetWidth;
+                  final double targetHeight;
+
+                  if (imageRatio > availableRatio) {
+                    targetWidth = constraints.maxWidth;
+                    targetHeight = targetWidth / imageRatio;
+                  } else {
+                    targetHeight = constraints.maxHeight;
+                    targetWidth = targetHeight * imageRatio;
+                  }
+
+                  return Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      clipBehavior: Clip.hardEdge,
+                      child: SizedBox(
+                        width: targetWidth,
+                        height: targetHeight,
+                        child: ColoredBox(
+                          color: Colors.black.withOpacity(0.18),
+                          child: RepaintBoundary(
+                            child: PhotoView(
+                              key: ValueKey('preview-photo-${wallpaper.id}'),
+                              imageProvider: CachedNetworkImageProvider(wallpaper.downloadUrl),
+                              minScale: PhotoViewComputedScale.contained,
+                              initialScale: PhotoViewComputedScale.contained,
+                              maxScale: PhotoViewComputedScale.covered * 3.2,
+                              basePosition: Alignment.center,
+                              backgroundDecoration: const BoxDecoration(color: Colors.transparent),
+                              loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.broken_image_rounded, color: Colors.white, size: 42),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
             Align(
