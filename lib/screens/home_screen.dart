@@ -407,6 +407,7 @@ class _FloatingHeader extends StatelessWidget {
 
 class _SelectedSheet extends StatefulWidget {
   const _SelectedSheet({
+    super.key,
     required this.wallpaper,
     required this.saving,
     required this.onOpenOriginal,
