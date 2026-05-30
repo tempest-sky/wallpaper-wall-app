@@ -1,0 +1,33 @@
+﻿2026-05-27T07:02:40.7262796Z ##[group]Run flutter analyze --no-fatal-infos --no-fatal-warnings
+2026-05-27T07:02:40.7263356Z [36;1mflutter analyze --no-fatal-infos --no-fatal-warnings[0m
+2026-05-27T07:02:40.7291566Z shell: /usr/bin/bash -e {0}
+2026-05-27T07:02:40.7291837Z env:
+2026-05-27T07:02:40.7292151Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-05-27T07:02:40.7292648Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-05-27T07:02:40.7293128Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.0-x64/flutter
+2026-05-27T07:02:40.7293494Z   PUB_CACHE: /home/runner/.pub-cache
+2026-05-27T07:02:40.7293751Z ##[endgroup]
+2026-05-27T07:02:49.8280215Z Analyzing wallpaper-wall-app...                                 
+2026-05-27T07:02:49.8286917Z 
+2026-05-27T07:02:49.8308091Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/main.dart:51:55 • deprecated_member_use
+2026-05-27T07:02:49.8310477Z    info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'. Try removing the import directive • lib/models/app_settings_state.dart:1:8 • unnecessary_import
+2026-05-27T07:02:49.8312982Z    info • Unnecessary use of multiple underscores. Try using '_' • lib/screens/home_screen.dart:87:37 • unnecessary_underscores
+2026-05-27T07:02:49.8314335Z    info • Unnecessary use of multiple underscores. Try using '_' • lib/screens/home_screen.dart:115:37 • unnecessary_underscores
+2026-05-27T07:02:49.8315640Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/screens/home_screen.dart:245:35 • deprecated_member_use
+2026-05-27T07:02:49.8318294Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/screens/home_screen.dart:246:76 • deprecated_member_use
+2026-05-27T07:02:49.8320387Z    info • Unnecessary use of multiple underscores. Try using '_' • lib/widgets/category_filter_bar.dart:23:31 • unnecessary_underscores
+2026-05-27T07:02:49.8322524Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/glass_button.dart:27:28 • deprecated_member_use
+2026-05-27T07:02:49.8325166Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/glass_panel.dart:30:31 • deprecated_member_use
+2026-05-27T07:02:49.8328208Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/glass_panel.dart:32:61 • deprecated_member_use
+2026-05-27T07:02:49.8330865Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/glass_panel.dart:35:37 • deprecated_member_use
+2026-05-27T07:02:49.8333656Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/slideshow_viewer.dart:98:66 • deprecated_member_use
+2026-05-27T07:02:49.8351740Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/slideshow_viewer.dart:112:74 • deprecated_member_use
+2026-05-27T07:02:49.8354054Z    info • Unnecessary use of multiple underscores. Try using '_' • lib/widgets/source_filter_bar.dart:33:31 • unnecessary_underscores
+2026-05-27T07:02:49.8356832Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:35:68 • deprecated_member_use
+2026-05-27T07:02:49.8359586Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:40:46 • deprecated_member_use
+2026-05-27T07:02:49.8362336Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:40:79 • deprecated_member_use
+2026-05-27T07:02:49.8365525Z    info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:49:25 • deprecated_member_use
+2026-05-27T07:02:49.8369077Z    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:49:40 • deprecated_member_use
+2026-05-27T07:02:49.8372192Z    info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre. Try replacing the use of the deprecated member with the replacement • lib/widgets/wallpaper_card.dart:65:41 • deprecated_member_use
+2026-05-27T07:02:49.8373836Z 
+2026-05-27T07:02:49.8477100Z 20 issues found. (ran in 8.4s)

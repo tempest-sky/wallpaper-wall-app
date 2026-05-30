@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:photo_view/photo_view.dart';
+// PhotoView removed for rounded image fidelity.
 import 'package:provider/provider.dart';
 
 import '../models/wallpaper.dart';
@@ -39,13 +39,8 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
 
   void _precacheAround() {
     if (!mounted || widget.wallpapers.isEmpty) return;
-    final current = _current;
     final next = widget.wallpapers[(_index + 1) % widget.wallpapers.length];
-    final previous = widget.wallpapers[(_index - 1 + widget.wallpapers.length) % widget.wallpapers.length];
-    for (final item in <Wallpaper>[current, next, previous]) {
-      precacheImage(CachedNetworkImageProvider(item.url), context);
-      precacheImage(CachedNetworkImageProvider(item.downloadUrl), context);
-    }
+    precacheImage(CachedNetworkImageProvider(next.url), context);
   }
 
   void _next() {
@@ -107,19 +102,21 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                       child: SizedBox(
                         width: targetWidth,
                         height: targetHeight,
-                        child: ColoredBox(
-                          color: Colors.black.withOpacity(0.18),
-                          child: RepaintBoundary(
-                            child: PhotoView(
+                        child: RepaintBoundary(
+                          child: InteractiveViewer(
+                            minScale: 1,
+                            maxScale: 3.2,
+                            clipBehavior: Clip.hardEdge,
+                            child: CachedNetworkImage(
                               key: ValueKey('preview-photo-${wallpaper.id}'),
-                              imageProvider: CachedNetworkImageProvider(wallpaper.downloadUrl),
-                              minScale: PhotoViewComputedScale.contained,
-                              initialScale: PhotoViewComputedScale.contained,
-                              maxScale: PhotoViewComputedScale.covered * 3.2,
-                              basePosition: Alignment.center,
-                              backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-                              loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
-                              errorBuilder: (context, error, stackTrace) => const Center(
+                              imageUrl: wallpaper.url,
+                              memCacheWidth: 1080,
+                              width: targetWidth,
+                              height: targetHeight,
+                              fit: BoxFit.cover,
+                              fadeInDuration: const Duration(milliseconds: 120),
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) => const Center(
                                 child: Icon(Icons.broken_image_rounded, color: Colors.white, size: 42),
                               ),
                             ),
@@ -225,6 +222,8 @@ class _BlurredPreviewBackground extends StatelessWidget {
               child: CachedNetworkImage(
                 key: ValueKey('preview-bg-${wallpaper.id}'),
                 imageUrl: wallpaper.url,
+                memCacheWidth: 360,
+                memCacheHeight: 640,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,

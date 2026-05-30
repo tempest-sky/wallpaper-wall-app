@@ -24,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _wallpaperKeys = <String, GlobalKey>{};
   bool _headerVisible = true;
   double _lastOffset = 0;
 
@@ -122,7 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openSlideshow(BuildContext context, Wallpaper wallpaper) {
     final state = context.read<WallpaperState>();
     final related = state.relatedWallpapers(wallpaper);
-    state.select(wallpaper);
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: true,
@@ -147,6 +147,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  GlobalKey _keyForWallpaper(Wallpaper wallpaper) {
+    return _wallpaperKeys.putIfAbsent(wallpaper.id, () => GlobalKey(debugLabel: 'wallpaper-${wallpaper.id}'));
+  }
+
+  void _syncWallpaperKeys(List<Wallpaper> visible) {
+    final visibleIds = visible.map((item) => item.id).toSet();
+    _wallpaperKeys.removeWhere((id, _) => !visibleIds.contains(id));
+    for (final wallpaper in visible) {
+      _keyForWallpaper(wallpaper);
+    }
+  }
+
+  void _scrollToWallpaper(Wallpaper wallpaper) {
+    final key = _wallpaperKeys[wallpaper.id];
+    final targetContext = key?.currentContext;
+    if (targetContext == null) return;
+    Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      alignment: 0.22,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+    );
+  }
+
   Future<void> _openExternalUrl(BuildContext context, String? url) async {
     if (url == null || url.trim().isEmpty) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -166,6 +191,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<WallpaperState>(
       builder: (context, state, _) {
         final visible = state.visibleWallpapers;
+        _syncWallpaperKeys(visible);
+        final selectedWallpaper = state.selected;
         return Scaffold(
           extendBody: true,
           body: Stack(
@@ -188,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       wallpapers: visible,
                       selected: state.selected,
                       loading: state.loading,
+                      itemKeys: _wallpaperKeys,
                       batchMode: state.batchMode,
                       batchSelectedIds: state.batchSelectedIds,
                       onSelect: state.select,
@@ -232,19 +260,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     onCancel: state.toggleBatchMode,
                   ),
                 ),
-              if (!state.batchMode && state.selected != null)
+              if (!state.batchMode && selectedWallpaper != null)
                 Positioned(
                   left: 14,
                   right: 14,
                   bottom: 14,
                   child: _SelectedSheet(
-                    wallpaper: state.selected!,
+                    key: ValueKey('selected-sheet-${selectedWallpaper.id}'),
+                    wallpaper: selectedWallpaper,
                     saving: state.saving,
-                    onOpenOriginal: () => _openPreview(context, state.selected!),
-                    onOpenSource: () => _openExternalUrl(context, state.selected!.sourceUrl),
-                    onSave: () => _save(context, state.selected!),
-                    onPlaySlideshow: () => _openSlideshow(context, state.selected!),
-                    onLocate: () => _scrollToWallpaper(state.selected!),
+                    onOpenOriginal: () => _openPreview(context, selectedWallpaper),
+                    onOpenSource: () => _openExternalUrl(context, selectedWallpaper.sourceUrl),
+                    onSave: () => _save(context, selectedWallpaper),
+                    onPlaySlideshow: () => _openSlideshow(context, selectedWallpaper),
+                    onLocate: () => _scrollToWallpaper(selectedWallpaper),
                   ),
                 ),
             ],
@@ -449,12 +478,23 @@ class _SelectedSheetState extends State<_SelectedSheet> with SingleTickerProvide
             opacity: 0.62,
             blurred: true,
             padding: const EdgeInsets.all(8),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                ClipRRect(
+                _SwipeHandle(color: scheme.onSurfaceVariant),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: RepaintBoundary(
-                    child: Image.network(widget.wallpaper.url, width: 54, height: 70, fit: BoxFit.cover),
+                    child: Image.network(
+                      widget.wallpaper.url,
+                      key: ValueKey('selected-thumb-${widget.wallpaper.id}'),
+                      width: 54,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -491,17 +531,49 @@ class _SelectedSheetState extends State<_SelectedSheet> with SingleTickerProvide
                 const SizedBox(width: 6),
                 GlassButton(icon: Icons.my_location_rounded, tooltip: '定位到网格', onPressed: widget.onLocate),
                 const SizedBox(width: 6),
-                GlassButton(
-                  icon: widget.saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
-                  tooltip: '保存',
-                  selected: true,
-                  onPressed: widget.saving ? null : widget.onSave,
+                    GlassButton(
+                      icon: widget.saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
+                      tooltip: '保存',
+                      selected: true,
+                      onPressed: widget.saving ? null : widget.onSave,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SwipeHandle extends StatelessWidget {
+  const _SwipeHandle({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.42),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const SizedBox(width: 42, height: 4),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '上滑查看原图',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ],
     );
   }
 }
@@ -544,20 +616,12 @@ class _BatchSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  wallpaper.authorName == null ? '${wallpaper.source.label} · ${wallpaper.origin}' : 'Photo by ${wallpaper.authorName} on Pexels',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  '点击保存到相册',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                 ),
               ],
             ),
           ),
-          GlassButton(icon: Icons.open_in_full_rounded, tooltip: '放大预览', onPressed: onOpenOriginal),
-          if (wallpaper.sourceUrl != null) ...<Widget>[
-            const SizedBox(width: 6),
-            GlassButton(icon: Icons.link_rounded, tooltip: '打开来源', onPressed: onOpenSource),
-          ],
-          const SizedBox(width: 6),
           GlassButton(
             icon: saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
             label: saving ? '保存中' : '保存全部',

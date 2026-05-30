@@ -1,0 +1,68 @@
+﻿2026-05-27T07:02:49.8563514Z ##[group]Run flutter build apk --debug
+2026-05-27T07:02:49.8563881Z [36;1mflutter build apk --debug[0m
+2026-05-27T07:02:49.8592460Z shell: /usr/bin/bash -e {0}
+2026-05-27T07:02:49.8592721Z env:
+2026-05-27T07:02:49.8593060Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-05-27T07:02:49.8593555Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-05-27T07:02:49.8594098Z   FLUTTER_ROOT: /opt/hostedtoolcache/flutter/stable-3.44.0-x64/flutter
+2026-05-27T07:02:49.8594499Z   PUB_CACHE: /home/runner/.pub-cache
+2026-05-27T07:02:49.8594766Z ##[endgroup]
+2026-05-27T07:02:50.3362838Z Upgrading gradle.properties
+2026-05-27T07:02:50.3373378Z Upgrading gradle.properties
+2026-05-27T07:04:11.1357406Z Running Gradle task 'assembleDebug'...                          
+2026-05-27T07:04:11.1466693Z 
+2026-05-27T07:04:11.1467617Z FAILURE: Build failed with an exception.
+2026-05-27T07:04:11.1476869Z 
+2026-05-27T07:04:11.1477285Z * What went wrong:
+2026-05-27T07:04:11.1478080Z Could not resolve all artifacts for configuration 'classpath'.
+2026-05-27T07:04:11.1478953Z > Could not resolve org.jetbrains.kotlin:kotlin-stdlib:2.0.21.
+2026-05-27T07:04:11.1479689Z   Required by:
+2026-05-27T07:04:11.1480215Z       unspecified:unspecified:unspecified
+2026-05-27T07:04:11.1481003Z    > Repository maven is disabled due to earlier error below:
+2026-05-27T07:04:11.1482163Z       > Could not resolve com.android.tools.utp:android-test-plugin-host-additional-test-output-proto:31.11.1.
+2026-05-27T07:04:11.1484565Z          > Could not get resource 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/utp/android-test-plugin-host-additional-test-output-proto/31.11.1/android-test-plugin-host-additional-test-output-proto-31.11.1.pom'.
+2026-05-27T07:04:11.1488145Z             > Could not GET 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/utp/android-test-plugin-host-additional-test-output-proto/31.11.1/android-test-plugin-host-additional-test-output-proto-31.11.1.pom'. Received status code 502 from server: Bad Gateway
+2026-05-27T07:04:11.1490446Z > Could not resolve com.android.tools.build:bundletool:1.18.1.
+2026-05-27T07:04:11.1491170Z   Required by:
+2026-05-27T07:04:11.1492376Z       unspecified:unspecified:unspecified > com.android.application:com.android.application.gradle.plugin:8.11.1 > com.android.tools.build:gradle:8.11.1
+2026-05-27T07:04:11.1493816Z    > Could not resolve com.android.tools.build:bundletool:1.18.1.
+2026-05-27T07:04:11.1495185Z       > Could not get resource 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/build/bundletool/1.18.1/bundletool-1.18.1.pom'.
+2026-05-27T07:04:11.1497385Z          > Could not GET 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/build/bundletool/1.18.1/bundletool-1.18.1.pom'. Received status code 502 from server: Bad Gateway
+2026-05-27T07:04:11.1498703Z > There are 65 more failures with identical causes.
+2026-05-27T07:04:11.1499047Z 
+2026-05-27T07:04:11.1499157Z * Try:
+2026-05-27T07:04:11.1499526Z > Run with --stacktrace option to get the stack trace.
+2026-05-27T07:04:11.1500092Z > Run with --info or --debug option to get more log output.
+2026-05-27T07:04:11.1500600Z > Run with --scan to get full insights.
+2026-05-27T07:04:11.1501059Z > Get more help at https://help.gradle.org.
+2026-05-27T07:04:11.1501361Z 
+2026-05-27T07:04:11.1501973Z BUILD FAILED in 1m 19s
+2026-05-27T07:04:11.6311551Z Running Gradle task 'assembleDebug'...                             81.3s
+2026-05-27T07:04:11.6318896Z [!] Gradle threw an error while downloading artifacts from the network.
+2026-05-27T07:04:11.6321217Z Retrying Gradle Build: #1, wait time: 100ms
+2026-05-27T07:04:26.6833625Z Running Gradle task 'assembleDebug'...                          
+2026-05-27T07:04:26.6836552Z 
+2026-05-27T07:04:26.6864666Z FAILURE: Build failed with an exception.
+2026-05-27T07:04:26.6876611Z 
+2026-05-27T07:04:26.6897505Z * What went wrong:
+2026-05-27T07:04:26.6898502Z Could not resolve all artifacts for configuration 'classpath'.
+2026-05-27T07:04:26.6900041Z > Could not resolve org.jetbrains:annotations:13.0.
+2026-05-27T07:04:26.6900773Z   Required by:
+2026-05-27T07:04:26.6901370Z       unspecified:unspecified:unspecified
+2026-05-27T07:04:26.6902195Z    > Repository maven is disabled due to earlier error below:
+2026-05-27T07:04:26.6903084Z       > Could not resolve com.android.tools:dvlib:31.11.1.
+2026-05-27T07:04:26.6904415Z          > Could not get resource 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/dvlib/31.11.1/dvlib-31.11.1.pom'.
+2026-05-27T07:04:26.6906618Z             > Could not GET 'https://maven.aliyun.com/repository/gradle-plugin/com/android/tools/dvlib/31.11.1/dvlib-31.11.1.pom'. Received status code 502 from server: Bad Gateway
+2026-05-27T07:04:26.6908166Z > There are 68 more failures with identical causes.
+2026-05-27T07:04:26.6908740Z 
+2026-05-27T07:04:26.6909301Z * Try:
+2026-05-27T07:04:26.6909870Z > Run with --stacktrace option to get the stack trace.
+2026-05-27T07:04:26.6925189Z > Run with --info or --debug option to get more log output.
+2026-05-27T07:04:26.6926004Z > Run with --scan to get full insights.
+2026-05-27T07:04:26.6926830Z > Get more help at https://help.gradle.org.
+2026-05-27T07:04:26.6927298Z 
+2026-05-27T07:04:26.6927601Z BUILD FAILED in 14s
+2026-05-27T07:04:26.8494376Z Running Gradle task 'assembleDebug'...                             15.1s
+2026-05-27T07:04:26.8495332Z [!] Gradle threw an error while downloading artifacts from the network.
+2026-05-27T07:04:26.8651687Z Gradle task assembleDebug failed with exit code 1
+2026-05-27T07:04:26.8741085Z ##[error]Process completed with exit code 1.

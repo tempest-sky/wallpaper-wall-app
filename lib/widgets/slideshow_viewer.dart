@@ -14,13 +14,13 @@ class SlideshowViewer extends StatefulWidget {
     required this.wallpapers,
     required this.initialIndex,
     required this.onClose,
-    this.onSave,
+    this.onSaveWallpaper,
   });
 
   final List<Wallpaper> wallpapers;
   final int initialIndex;
   final VoidCallback onClose;
-  final VoidCallback? onSave;
+  final Future<void> Function(Wallpaper wallpaper)? onSaveWallpaper;
 
   @override
   State<SlideshowViewer> createState() => _SlideshowViewerState();
@@ -31,6 +31,7 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
   late AnimationController _controller;
   Timer? _timer;
   bool _playing = true;
+  bool _saving = false;
 
   Wallpaper get _current => widget.wallpapers[_index];
 
@@ -61,12 +62,8 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
 
   void _precacheAround() {
     if (!mounted || widget.wallpapers.isEmpty) return;
-    final current = _current;
     final next = widget.wallpapers[(_index + 1) % widget.wallpapers.length];
-    final previous = widget.wallpapers[(_index - 1 + widget.wallpapers.length) % widget.wallpapers.length];
-    for (final item in <Wallpaper>[current, next, previous]) {
-      precacheImage(CachedNetworkImageProvider(item.url), context);
-    }
+    precacheImage(CachedNetworkImageProvider(next.url), context);
   }
 
   void _startTimer() {
@@ -92,6 +89,36 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
     setState(() => _index = (_index - 1 + widget.wallpapers.length) % widget.wallpapers.length);
     _controller.forward(from: 0);
     WidgetsBinding.instance.addPostFrameCallback((_) => _precacheAround());
+  }
+
+  Future<void> _saveCurrent() async {
+    final save = widget.onSaveWallpaper;
+    if (save == null || _saving) return;
+    final target = _current;
+    final wasPlaying = _playing;
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _saving = true;
+      _playing = false;
+    });
+    _timer?.cancel();
+
+    try {
+      await save(target);
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('已保存：${target.name}')));
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('保存失败：$error')));
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _playing = wasPlaying;
+      });
+      _startTimer();
+    }
   }
 
   @override
@@ -192,9 +219,14 @@ class _SlideshowViewerState extends State<SlideshowViewer> with SingleTickerProv
                         ),
                         const SizedBox(width: 8),
                         Expanded(child: GlassButton(icon: Icons.skip_next_rounded, label: '下一张', blurred: true, onPressed: _next)),
-                        if (widget.onSave != null) ...<Widget>[
+                        if (widget.onSaveWallpaper != null) ...<Widget>[
                           const SizedBox(width: 8),
-                          GlassButton(icon: Icons.download_rounded, tooltip: '保存原图', blurred: true, onPressed: widget.onSave),
+                          GlassButton(
+                            icon: _saving ? Icons.hourglass_top_rounded : Icons.download_rounded,
+                            tooltip: _saving ? '保存中' : '保存原图',
+                            blurred: true,
+                            onPressed: _saving ? null : _saveCurrent,
+                          ),
                         ],
                       ],
                     ),
@@ -237,6 +269,8 @@ class _SlideshowBlurredBackground extends StatelessWidget {
                 scale: 1.48,
                 child: CachedNetworkImage(
                   imageUrl: wallpaper.url,
+                  memCacheWidth: 360,
+                  memCacheHeight: 640,
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -288,6 +322,7 @@ class _RoundedSlideImage extends StatelessWidget {
                   color: Colors.white.withOpacity(0.04),
                   child: CachedNetworkImage(
                     imageUrl: wallpaper.url,
+                    memCacheWidth: 1080,
                     fit: BoxFit.cover,
                     width: targetWidth,
                     height: targetHeight,

@@ -14,8 +14,8 @@ class WallpaperApiService {
   static const String _yuanfangEndpoint = 'https://tu.ltyuanfang.cn/api/fengjing.php';
   static const String _yuanmengEndpoint = 'https://api.mmp.cc/api/kswallpaper';
 
-  static const int perCategoryCount = 30;
-  static const int mixedCount = 120;
+  static const int perCategoryCount = 24;
+  static const int mixedCount = 90;
 
   static const Map<WallpaperCategory, int> _categoryCid = {
     WallpaperCategory.general: 9,
@@ -89,7 +89,7 @@ class WallpaperApiService {
           cid: cid,
           category: _categoryFromCid(cid),
           start: _random360Start(seed: seed, start: start, cid: cid),
-          count: 10,
+          count: 6,
         ).catchError((_) => <Wallpaper>[]),
       ),
     );
@@ -103,7 +103,7 @@ class WallpaperApiService {
           cid: cid,
           category: _categoryFromCid(cid),
           start: _random360Start(seed: seed, start: start, cid: cid),
-          count: 10,
+          count: 6,
         ).catchError((_) => <Wallpaper>[]),
       ),
       _fetchBing(start: start, seed: seed).catchError((_) => <Wallpaper>[]),
@@ -207,7 +207,7 @@ class WallpaperApiService {
     final uri = Uri.parse(_picsumEndpoint).replace(
       queryParameters: <String, String>{
         'page': '$page',
-        'limit': '20',
+        'limit': '14',
       },
     );
 
@@ -223,12 +223,13 @@ class WallpaperApiService {
       final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
       final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
       final imageSeed = item['id'] ?? '$id-$seed';
-      final imageUrl = 'https://picsum.photos/seed/$imageSeed/1080/1920';
+      final imageUrl = 'https://picsum.photos/seed/$imageSeed/720/1280';
+      final originalUrl = 'https://picsum.photos/seed/$imageSeed/1080/1920';
       return Wallpaper(
         id: id,
         name: '随机摄影 · $author',
         url: imageUrl,
-        downloadUrl: imageUrl,
+        downloadUrl: originalUrl,
         width: width,
         height: height,
         category: WallpaperCategory.random,
@@ -252,7 +253,7 @@ class WallpaperApiService {
       queryParameters: <String, String>{
         'query': query,
         'orientation': 'portrait',
-        'per_page': '24',
+        'per_page': '16',
         'page': '$page',
       },
     );
@@ -270,7 +271,7 @@ class WallpaperApiService {
       final id = 'pexels-${item['id'] ?? item.hashCode}';
       final src = item['src'];
       final original = src is Map<String, dynamic> ? '${src['original'] ?? src['large2x'] ?? src['large'] ?? ''}' : '';
-      final display = src is Map<String, dynamic> ? '${src['large2x'] ?? src['large'] ?? original}' : original;
+      final display = src is Map<String, dynamic> ? '${src['large'] ?? src['medium'] ?? src['large2x'] ?? original}' : original;
       final width = int.tryParse('${item['width'] ?? 1080}') ?? 1080;
       final height = int.tryParse('${item['height'] ?? 1920}') ?? 1920;
       final photographer = '${item['photographer'] ?? 'Pexels'}';

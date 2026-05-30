@@ -12,6 +12,7 @@ class WallpaperGrid extends StatelessWidget {
     required this.onSelect,
     required this.onOpenOriginal,
     required this.onSave,
+    this.itemKeys = const <String, GlobalKey>{},
     this.batchMode = false,
     this.batchSelectedIds = const <String>{},
     required this.loading,
@@ -22,6 +23,7 @@ class WallpaperGrid extends StatelessWidget {
   final ValueChanged<Wallpaper> onSelect;
   final ValueChanged<Wallpaper> onOpenOriginal;
   final ValueChanged<Wallpaper> onSave;
+  final Map<String, GlobalKey> itemKeys;
   final bool loading;
   final bool batchMode;
   final Set<String> batchSelectedIds;
@@ -84,7 +86,8 @@ class WallpaperGrid extends StatelessWidget {
               }
 
               final wallpaper = wallpapers[index];
-              return WallpaperCard(
+              final itemKey = itemKeys[wallpaper.id];
+              final card = WallpaperCard(
                 wallpaper: wallpaper,
                 selected: selected?.id == wallpaper.id,
                 batchMode: batchMode,
@@ -93,6 +96,8 @@ class WallpaperGrid extends StatelessWidget {
                 onOpenOriginal: () => onOpenOriginal(wallpaper),
                 onSave: () => onSave(wallpaper),
               );
+              if (itemKey == null) return card;
+              return KeyedSubtree(key: itemKey, child: card);
             },
           );
         },

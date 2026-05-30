@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "project_dir": "/data/user/0/com.ai.assistance.operit/files/workspace/a715f4d3-887f-4286-b375-3fb367cc4503",
+  "scan_types": [
+    "secrets",
+    "dangerous_patterns",
+    "dependency_files",
+    "config_risks"
+  ],
+  "scanned_files": 73,
+  "finding_count": 0,
+  "findings": [],
+  "dependency_files": [],
+  "warnings": [],
+  "generated_at": "2026-05-30T03:28:33.995Z"
+}

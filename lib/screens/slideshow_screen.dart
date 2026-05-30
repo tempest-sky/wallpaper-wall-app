@@ -22,11 +22,7 @@ class SlideshowScreen extends StatelessWidget {
       wallpapers: wallpapers,
       initialIndex: index < 0 ? 0 : index,
       onClose: () => Navigator.of(context).maybePop(),
-      onSave: () {
-        final state = context.read<WallpaperState>();
-        final current = index < 0 || index >= wallpapers.length ? wallpapers.first : wallpapers[index];
-        state.saveToGallery(current);
-      },
+      onSaveWallpaper: (wallpaper) => context.read<WallpaperState>().saveToGallery(wallpaper),
     );
   }
 }
